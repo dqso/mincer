@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = ";api";
+
+enum Code {
+  UNKNOWN_CODE = 0;
+  PING = 1;
+  PONG = 2;
+}
+
+message Message {
+  Code  code    = 1;
+  bytes payload = 2;
+}
+
+message Ping {
+  string ping = 1;
+}
+
+message Pong {
+  string pong = 1;
+}
