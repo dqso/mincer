@@ -20,7 +20,7 @@ func NewCloseScene() *CloseScene {
 }
 
 func (s *CloseScene) Update(state State) error {
-	if s.frames <= 100 {
+	if s.frames <= 40 {
 		s.frames++
 		return nil
 	}

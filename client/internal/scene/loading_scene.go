@@ -7,12 +7,12 @@ import (
 )
 
 type LoadingScene struct {
-	connected chan struct{}
+	onConnected func() chan struct{}
 }
 
-func NewLoadingScene(connected chan struct{}) *LoadingScene {
+func NewLoadingScene(onConnected func() chan struct{}) *LoadingScene {
 	return &LoadingScene{
-		connected: connected,
+		onConnected: onConnected,
 	}
 }
 
@@ -20,9 +20,9 @@ func (s *LoadingScene) Update(state State) error {
 	select {
 	default:
 		return nil
-	case <-s.connected:
+	case <-s.onConnected():
 	}
-	state.manager.Go(NewMincerScene())
+	state.manager.Go(NewMincerScene(state.world))
 	return nil
 }
 

@@ -19,10 +19,12 @@ type Consumer struct {
 
 type config interface {
 	NCRequestPerSecond() int
+	NCMaxClients() int
 }
 
 type usecase interface {
 	Ping(ctx context.Context, fromUserID uint64, ping string) error
+	OnPlayerConnect(chan uint64)
 }
 
 func NewConsumer(ctx context.Context, config config, server *netcode.Server, usecase usecase) (*Consumer, error) {
@@ -45,6 +47,9 @@ func NewConsumer(ctx context.Context, config config, server *netcode.Server, use
 func (c *Consumer) listen(ctx context.Context) {
 	var serverTime float64
 	deltaTime := time.Duration(float64(time.Second) / float64(c.config.NCRequestPerSecond()))
+	processedPlayersID := make(chan uint64, c.config.NCMaxClients())
+
+	go c.usecase.OnPlayerConnect(onPlayerConnectDetector(ctx, processedPlayersID))
 
 	for {
 		// TODO startTime := time.Now()
@@ -63,6 +68,7 @@ func (c *Consumer) listen(ctx context.Context) {
 			if err != nil {
 				continue
 			}
+			processedPlayersID <- clientID
 			bts, _ := c.server.RecvPayload(idx)
 			if len(bts) == 0 {
 				continue

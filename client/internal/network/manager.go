@@ -1,34 +1,26 @@
 package network
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
-	"github.com/dqso/mincer/client/internal/api"
+	"github.com/dqso/mincer/client/internal/entity"
 	"github.com/wirepair/netcode"
-	"google.golang.org/protobuf/proto"
 	"log"
-	"net/http"
 	"time"
 )
-
-type NetcodeToken struct {
-	ClientID     uint64 `json:"client_id"`
-	ConnectToken string `json:"connect_token"`
-}
 
 type Manager struct {
 	tokenUrl string
 	nc       *netcode.Client
+	world    *entity.World
 
 	onConnected chan struct{}
 }
 
-func NewManager(tokenUrl string) *Manager {
+func NewManager(tokenUrl string, world *entity.World) *Manager {
 	m := &Manager{
 		tokenUrl:    tokenUrl,
 		onConnected: make(chan struct{}),
+		world:       world,
 	}
 
 	m.start()
@@ -49,42 +41,24 @@ func (m *Manager) start() {
 			log.Print(err)
 			return
 		}
+		m.world.Me.ID = id
 		m.nc = netcode.NewClient(token)
 		m.nc.SetId(id)
 		if err := m.nc.Connect(); err != nil {
 			log.Print(err)
 			return
 		}
+		close(m.onConnected)
 
 		clientTime := float64(0)
 		delta := float64(1.0 / 60.0)
 		deltaTime := time.Duration(delta * float64(time.Second))
-		qwe := false
 		for {
-			if clientTime > 1 && !qwe {
-				qwe = true
-				log.Print("ping send")
-				bts, err := proto.Marshal(&api.Ping{Ping: "ping"})
-				if err != nil {
-					log.Print(err)
-					continue
-				}
-				bts, err = proto.Marshal(&api.Message{Code: api.Code_PING, Payload: bts})
-				if err != nil {
-					log.Print(err)
-					continue
-				}
-				if err := m.nc.SendData(bts); err != nil {
-					log.Print(err)
-					continue
-				}
-			}
-
 			m.nc.Update(clientTime)
 
-			data, n := m.nc.RecvData()
-			if n > 0 {
-				log.Printf("%d: %s", n, string(data))
+			data, _ := m.nc.RecvData()
+			if len(data) > 0 {
+				m.decodeMessage(data)
 			}
 
 			time.Sleep(deltaTime)
@@ -105,31 +79,4 @@ func (m *Manager) start() {
 		}
 	}()
 	//return done
-}
-
-func (m *Manager) getConnectToken(ctx context.Context) (uint64, *netcode.ConnectToken, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.tokenUrl, bytes.NewReader([]byte("{}")))
-	if err != nil {
-		return 0, nil, err
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer resp.Body.Close()
-	var response NetcodeToken
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return 0, nil, err
-	}
-	log.Printf("%d: %s", response.ClientID, response.ConnectToken)
-
-	tokenBts, err := base64.StdEncoding.DecodeString(response.ConnectToken)
-	if err != nil {
-		return 0, nil, err
-	}
-	connToken, err := netcode.ReadConnectToken(tokenBts)
-	if err != nil {
-		return 0, nil, err
-	}
-	return response.ClientID, connToken, nil
 }

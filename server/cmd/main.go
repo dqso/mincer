@@ -63,7 +63,16 @@ func main() {
 		return ncServer.Stop()
 	})
 
-	ncProducer := nc_adapter.NewProducer(ncServer)
+	ncProducer := nc_adapter.NewProducer(config, ncServer)
+	ncProducerDone := ncProducer.StartLoop(ctx)
+	closer.Add(func(ctx context.Context) error {
+		select {
+		case <-ncProducerDone:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	})
 
 	usecaseWorld := usecase_world.NewUsecase(ncProducer)
 

@@ -1,6 +1,7 @@
 package scene
 
 import (
+	"github.com/dqso/mincer/client/internal/entity"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
@@ -8,6 +9,7 @@ import (
 type Manager struct {
 	current Scene
 	next    Scene
+	world   *entity.World
 
 	transition     int
 	transitionFrom *ebiten.Image
@@ -21,9 +23,10 @@ type Scene interface {
 	Draw(screen *ebiten.Image)
 }
 
-func NewManager(initial Scene) *Manager {
+func NewManager(initial Scene, world *entity.World) *Manager {
 	m := &Manager{
 		current: initial,
+		world:   world,
 	}
 
 	w, h := ebiten.WindowSize()
@@ -35,6 +38,7 @@ func NewManager(initial Scene) *Manager {
 
 type State struct {
 	manager *Manager
+	world   *entity.World
 }
 
 func (m *Manager) Update() error {
@@ -46,6 +50,7 @@ func (m *Manager) Update() error {
 	if m.transition == 0 {
 		return m.current.Update(State{
 			manager: m,
+			world:   m.world,
 		})
 	}
 

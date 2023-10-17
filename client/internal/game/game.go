@@ -1,18 +1,21 @@
 package game
 
 import (
+	"github.com/dqso/mincer/client/internal/entity"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Game struct {
 	sceneManager   sceneManager
 	networkManager networkManager
+	world          *entity.World
 }
 
-func New(sceneManager sceneManager, networkManager networkManager) *Game {
+func New(sceneManager sceneManager, networkManager networkManager, world *entity.World) *Game {
 	return &Game{
 		sceneManager:   sceneManager,
 		networkManager: networkManager,
+		world:          world,
 	}
 }
 

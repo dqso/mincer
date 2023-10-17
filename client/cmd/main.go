@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"github.com/dqso/mincer/client/internal/entity"
 	"github.com/dqso/mincer/client/internal/game"
 	"github.com/dqso/mincer/client/internal/network"
 	"github.com/dqso/mincer/client/internal/scene"
@@ -21,14 +22,16 @@ func main() {
 	//ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	//defer cancel()
 
-	networkManager := network.NewManager(tokenUrl)
-	sceneManager := scene.NewManager(scene.NewLoadingScene(networkManager.OnConnected()))
+	world := entity.NewWorld()
+
+	networkManager := network.NewManager(tokenUrl, world)
+	sceneManager := scene.NewManager(scene.NewLoadingScene(networkManager.OnConnected), world)
 
 	//mincer.NewObjectCircle(100, 100, 13, colornames.Red600)
 
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("mincer")
-	if err := ebiten.RunGame(game.New(sceneManager, networkManager)); err != nil {
+	if err := ebiten.RunGame(game.New(sceneManager, networkManager, world)); err != nil {
 		log.Fatal(err)
 	}
 }
