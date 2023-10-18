@@ -12,10 +12,12 @@ type Producer struct {
 	config config
 	server *netcode.Server
 
-	onPlayerConnect   map[uint64]struct{}
-	mxOnPlayerConnect sync.Mutex
-	onPlayerChange    map[uint64]entity.Player
-	mxOnPlayerChange  sync.Mutex
+	onPlayerConnect      map[uint64]struct{}
+	mxOnPlayerConnect    sync.Mutex
+	onPlayerDisconnect   map[uint64]struct{}
+	mxOnPlayerDisconnect sync.Mutex
+	onPlayerChange       map[uint64]entity.Player
+	mxOnPlayerChange     sync.Mutex
 }
 
 type config interface {
@@ -27,8 +29,9 @@ func NewProducer(config config, server *netcode.Server) *Producer {
 		config: config,
 		server: server,
 
-		onPlayerConnect: make(map[uint64]struct{}),
-		onPlayerChange:  make(map[uint64]entity.Player),
+		onPlayerConnect:    make(map[uint64]struct{}),
+		onPlayerDisconnect: make(map[uint64]struct{}),
+		onPlayerChange:     make(map[uint64]entity.Player),
 	}
 }
 

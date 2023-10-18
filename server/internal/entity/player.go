@@ -86,6 +86,7 @@ func (p *player) PublicStats() (hp int64, radius float64, dead bool) {
 type Players interface {
 	IsExists(id uint64) bool
 	Add(p Player)
+	Remove(id uint64)
 	Slice() []Player
 }
 
@@ -111,6 +112,12 @@ func (pp *players) Add(p Player) {
 	pp.mxByID.Lock()
 	defer pp.mxByID.Unlock()
 	pp.byID[p.ID()] = p
+}
+
+func (pp *players) Remove(id uint64) {
+	pp.mxByID.Lock()
+	defer pp.mxByID.Unlock()
+	delete(pp.byID, id)
 }
 
 func (pp *players) Slice() []Player {

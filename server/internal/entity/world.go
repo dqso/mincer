@@ -2,6 +2,7 @@ package entity
 
 type World interface {
 	AddPlayer(id uint64) (Player, error)
+	RemovePlayer(id uint64)
 	Players() Players
 }
 
@@ -14,6 +15,7 @@ type world struct {
 
 func NewWorld(seed int64, westNorth, eastSouth Point) World {
 	return &world{
+		// TODO w, h
 		players: NewPlayers(),
 		god:     NewGod(seed),
 	}
@@ -43,6 +45,10 @@ func (w *world) AddPlayer(id uint64) (Player, error) {
 	)
 	w.players.Add(p)
 	return p, nil
+}
+
+func (w *world) RemovePlayer(id uint64) {
+	w.players.Remove(id)
 }
 
 func (w *world) Players() Players {

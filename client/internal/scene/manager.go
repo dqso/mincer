@@ -9,7 +9,7 @@ import (
 type Manager struct {
 	current Scene
 	next    Scene
-	world   *entity.World
+	world   entity.World
 
 	transition     int
 	transitionFrom *ebiten.Image
@@ -23,7 +23,7 @@ type Scene interface {
 	Draw(screen *ebiten.Image)
 }
 
-func NewManager(initial Scene, world *entity.World) *Manager {
+func NewManager(initial Scene, world entity.World) *Manager {
 	m := &Manager{
 		current: initial,
 		world:   world,
@@ -38,7 +38,7 @@ func NewManager(initial Scene, world *entity.World) *Manager {
 
 type State struct {
 	manager *Manager
-	world   *entity.World
+	world   entity.World
 }
 
 func (m *Manager) Update() error {

@@ -37,23 +37,29 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		}
 		log.Printf("Присоединился %d", message.PlayerId)
 
-	case api.Code_ON_PLAYER_CHANGE:
-		var message api.OnPlayerChange
+	case api.Code_ON_PLAYER_DISCONNECT:
+		var message api.OnPlayerDisconnect
 		if err := proto.Unmarshal(data, &message); err != nil {
 			log.Print(err) // TODO logger
 			return
 		}
-		p, ok := m.world.Player(message.Player.PlayerId)
-		if !ok {
-			p = &entity.Player{}
+		log.Printf("Отсоединился %d", message.PlayerId)
+		m.world.Players().Remove(message.PlayerId)
+
+	case api.Code_ON_PLAYER_CHANGE:
+		var msg api.OnPlayerChange
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
 		}
-		p.ID = message.Player.PlayerId
-		p.X = message.Player.X
-		p.Y = message.Player.Y
-		p.HP = message.Player.Hp
-		p.Radius = message.Player.Radius
-		p.Dead = message.Player.Dead
-		m.world.SetPlayer(p)
+		p, ok := m.world.Players().Get(msg.Player.PlayerId)
+		if !ok {
+			p = entity.NewPlayer(msg.Player.PlayerId, msg.Player.X, msg.Player.Y, msg.Player.Hp, msg.Player.Radius, msg.Player.Dead)
+			m.world.Players().Add(p)
+		} else {
+			p.SetPosition(msg.Player.X, msg.Player.Y)
+			p.SetStats(msg.Player.Hp, msg.Player.Radius, msg.Player.Dead)
+		}
 	//log.Printf("Изменился %d: (%0.2f, %0.2f), здоровье %d, радиус %0.2f, умер %v", message.PlayerId, message.X, message.Y, message.Hp, message.Radius, message.Dead)
 
 	case api.Code_PLAYER_LIST:
@@ -63,17 +69,14 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			return
 		}
 		for _, player := range message.Players {
-			p, ok := m.world.Player(player.PlayerId)
+			p, ok := m.world.Players().Get(player.PlayerId)
 			if !ok {
-				p = &entity.Player{}
+				p = entity.NewPlayer(player.PlayerId, player.X, player.Y, player.Hp, player.Radius, player.Dead)
+				m.world.Players().Add(p)
+			} else {
+				p.SetPosition(player.X, player.Y)
+				p.SetStats(player.Hp, player.Radius, player.Dead)
 			}
-			p.ID = player.PlayerId
-			p.X = player.X
-			p.Y = player.Y
-			p.HP = player.Hp
-			p.Radius = player.Radius
-			p.Dead = player.Dead
-			m.world.SetPlayer(p)
 		}
 
 	default:

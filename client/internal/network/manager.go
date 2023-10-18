@@ -11,12 +11,12 @@ import (
 type Manager struct {
 	tokenUrl string
 	nc       *netcode.Client
-	world    *entity.World
+	world    entity.World
 
 	onConnected chan struct{}
 }
 
-func NewManager(tokenUrl string, world *entity.World) *Manager {
+func NewManager(tokenUrl string, world entity.World) *Manager {
 	m := &Manager{
 		tokenUrl:    tokenUrl,
 		onConnected: make(chan struct{}),
@@ -41,7 +41,7 @@ func (m *Manager) start() {
 			log.Print(err)
 			return
 		}
-		m.world.Me.ID = id
+		m.world.Players().Me().SetID(id)
 		m.nc = netcode.NewClient(token)
 		m.nc.SetId(id)
 		if err := m.nc.Connect(); err != nil {

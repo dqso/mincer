@@ -8,10 +8,10 @@ import (
 type Game struct {
 	sceneManager   sceneManager
 	networkManager networkManager
-	world          *entity.World
+	world          entity.World
 }
 
-func New(sceneManager sceneManager, networkManager networkManager, world *entity.World) *Game {
+func New(sceneManager sceneManager, networkManager networkManager, world entity.World) *Game {
 	return &Game{
 		sceneManager:   sceneManager,
 		networkManager: networkManager,

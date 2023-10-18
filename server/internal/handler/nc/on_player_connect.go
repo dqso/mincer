@@ -1,29 +1,42 @@
 package nc_handler
 
-import "context"
+import (
+	"context"
+)
 
-func onPlayerConnectDetector(ctx context.Context, processedPlayersID chan uint64) chan uint64 {
-	newPlayers := make(chan uint64, 1)
-	players := make(map[uint64]struct{})
+func onPlayerConnectDetector(ctx context.Context, processedPlayersID chan []uint64) (chan uint64, chan uint64) {
+	connect, disconnect := make(chan uint64, 1), make(chan uint64, 1)
 
 	go func() {
-		defer close(newPlayers)
+		defer close(connect)
+		defer close(disconnect)
+		players := make(map[uint64]int)
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case id, ok := <-processedPlayersID:
+
+			case ids, ok := <-processedPlayersID:
 				if !ok {
 					return
 				}
-				if _, ok := players[id]; ok {
-					continue
+				for _, id := range ids {
+					if _, ok := players[id]; !ok {
+						connect <- id
+					}
+					players[id] = 10
 				}
-				players[id] = struct{}{}
-				newPlayers <- id
+				for id, priority := range players {
+					if priority <= 0 {
+						delete(players, id)
+						disconnect <- id
+						continue
+					}
+					players[id]--
+				}
 			}
 		}
 	}()
 
-	return newPlayers
+	return connect, disconnect
 }

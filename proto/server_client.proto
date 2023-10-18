@@ -3,13 +3,15 @@ syntax = "proto3";
 option go_package = ";api";
 
 enum Code {
-  UNKNOWN_CODE      = 0;
-  PING              = 1;
-  PONG              = 2;
-  BATCH             = 3;
-  ON_PLAYER_CONNECT = 4;
-  ON_PLAYER_CHANGE  = 5;
-  PLAYER_LIST       = 6;
+  UNKNOWN_CODE         = 0;
+  PING                 = 1;
+  PONG                 = 2;
+  BATCH                = 3;
+  ON_PLAYER_CONNECT    = 4;
+  ON_PLAYER_CHANGE     = 5;
+  PLAYER_LIST          = 6;
+  ON_PLAYER_DISCONNECT = 7;
+  QUIT                 = 8;
 }
 
 message Message {
@@ -33,6 +35,10 @@ message OnPlayerConnect {
   uint64 player_id = 1;
 }
 
+message OnPlayerDisconnect {
+  uint64 player_id = 1;
+}
+
 message PublicPlayer {
   uint64 player_id = 1;
   double x         = 2;
@@ -49,3 +55,5 @@ message OnPlayerChange {
 message PlayerList {
   repeated PublicPlayer players = 1;
 }
+
+message Quit {}
