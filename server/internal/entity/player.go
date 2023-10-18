@@ -1,14 +1,18 @@
 package entity
 
 import (
+	"math"
 	"sync"
+	"time"
 )
 
 type Player interface {
 	ID() uint64
 	SetHP(hp int64)
 	SetPosition(x, y float64)
-	Position() (float64, float64)
+	Position() Point
+	SetDirection(direction float64, isMoving bool)
+	Move(lifeTime time.Duration) (isMoved bool)
 	Radius() float64
 	PublicStats() (hp int64, radius float64, dead bool)
 }
@@ -18,6 +22,7 @@ type player struct {
 
 	x, y       float64
 	direction  float64
+	isMoving   bool
 	mxPosition sync.RWMutex
 
 	hp      int64
@@ -65,10 +70,28 @@ func (p *player) SetPosition(x float64, y float64) {
 	p.x, p.y = x, y
 }
 
-func (p *player) Position() (float64, float64) {
+func (p *player) Position() Point {
 	p.mxPosition.RLock()
 	defer p.mxPosition.RUnlock()
-	return p.x, p.y
+	return Point{X: p.x, Y: p.y}
+}
+
+func (p *player) SetDirection(direction float64, isMoving bool) {
+	p.mxPosition.Lock()
+	defer p.mxPosition.Unlock()
+	p.direction, p.isMoving = direction, isMoving
+}
+
+func (p *player) Move(lifeTime time.Duration) (isMoved bool) {
+	p.mxPosition.Lock()
+	defer p.mxPosition.Unlock()
+	if !p.isMoving {
+		return false
+	}
+	sin, cos := math.Sincos(p.direction * math.Pi / 180)
+	p.x = p.x + p.speed*lifeTime.Seconds()*sin
+	p.y = p.y - p.speed*lifeTime.Seconds()*cos
+	return true
 }
 
 func (p *player) Radius() float64 {
@@ -84,7 +107,7 @@ func (p *player) PublicStats() (hp int64, radius float64, dead bool) {
 }
 
 type Players interface {
-	IsExists(id uint64) bool
+	Get(id uint64) (Player, bool)
 	Add(p Player)
 	Remove(id uint64)
 	Slice() []Player
@@ -101,11 +124,11 @@ func NewPlayers() Players {
 	}
 }
 
-func (pp *players) IsExists(id uint64) bool {
+func (pp *players) Get(id uint64) (Player, bool) {
 	pp.mxByID.RLock()
 	defer pp.mxByID.RUnlock()
-	_, ok := pp.byID[id]
-	return ok
+	p, ok := pp.byID[id]
+	return p, ok
 }
 
 func (pp *players) Add(p Player) {

@@ -1,18 +1,22 @@
 package game
 
 import (
+	"context"
+	"fmt"
 	"github.com/dqso/mincer/client/internal/entity"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Game struct {
+	ctx            context.Context
 	sceneManager   sceneManager
 	networkManager networkManager
 	world          entity.World
 }
 
-func New(sceneManager sceneManager, networkManager networkManager, world entity.World) *Game {
+func New(ctx context.Context, sceneManager sceneManager, networkManager networkManager, world entity.World) *Game {
 	return &Game{
+		ctx:            ctx,
 		sceneManager:   sceneManager,
 		networkManager: networkManager,
 		world:          world,
@@ -28,6 +32,11 @@ type networkManager interface {
 }
 
 func (g *Game) Update() error {
+	select {
+	case <-g.ctx.Done():
+		return fmt.Errorf("game ended by OS signal")
+	default:
+	}
 	return g.sceneManager.Update()
 }
 

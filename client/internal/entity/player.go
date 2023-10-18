@@ -10,8 +10,8 @@ type Me interface {
 	GetPlayer() Player
 	SetID(id uint64)
 
-	Direction() float64
-	SetDirection(d float64)
+	Direction() (float64, bool)
+	SetDirection(d float64, isMoving bool)
 	Speed() float64
 }
 
@@ -19,6 +19,7 @@ type me struct {
 	Player
 
 	direction float64
+	isMoving  bool
 	speed     float64
 }
 
@@ -30,11 +31,11 @@ func newEmptyMe() Me {
 	}
 }
 
-func (m *me) GetPlayer() Player      { return m.Player }
-func (m *me) SetID(id uint64)        { m.Player.setID(id) }
-func (m *me) Direction() float64     { return m.direction }
-func (m *me) SetDirection(d float64) { m.direction = d }
-func (m *me) Speed() float64         { return m.speed }
+func (m *me) GetPlayer() Player                     { return m.Player }
+func (m *me) SetID(id uint64)                       { m.Player.setID(id) }
+func (m *me) Direction() (float64, bool)            { return m.direction, m.isMoving }
+func (m *me) SetDirection(d float64, isMoving bool) { m.direction, m.isMoving = d, isMoving }
+func (m *me) Speed() float64                        { return m.speed }
 
 type Player interface {
 	ID() uint64

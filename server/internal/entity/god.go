@@ -31,11 +31,11 @@ const (
 	minPlayerRadius float64 = 10.0
 	maxPlayerRadius float64 = 50.0
 
-	minPlayerSpeed float64 = 0.5
-	maxPlayerSpeed float64 = 1.0
+	minPlayerSpeed float64 = 50.0
+	maxPlayerSpeed float64 = 100.0
 
-	MaxNorth float64 = -1000.0
-	MaxEast  float64 = 1000.0
-	MaxSouth float64 = 1000.0
-	MaxWest  float64 = -1000.0
+	MaxNorth float64 = -100.0
+	MaxEast  float64 = 100.0
+	MaxSouth float64 = 100.0
+	MaxWest  float64 = -100.0
 )

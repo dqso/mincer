@@ -24,7 +24,9 @@ type config interface {
 
 type usecase interface {
 	Ping(ctx context.Context, fromUserID uint64, ping string) error
+	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving bool) error
 	OnPlayerConnect(connect chan uint64, disconnect chan uint64)
+	LifeCycle(ctx context.Context) chan struct{}
 }
 
 func NewConsumer(ctx context.Context, config config, server *netcode.Server, usecase usecase) (*Consumer, error) {
@@ -51,11 +53,15 @@ func (c *Consumer) listen(ctx context.Context) {
 
 	go c.usecase.OnPlayerConnect(onPlayerConnectDetector(ctx, processedPlayersID))
 
+	// TODO ctx
+	stopped := c.usecase.LifeCycle(ctx)
+
 	for {
 		// TODO startTime := time.Now()
 		select {
 		case <-ctx.Done():
 			log.Print("nc consumer", ctx.Err()) // TODO logger
+			<-stopped
 			return
 		default:
 		}

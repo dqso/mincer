@@ -8,27 +8,23 @@ import (
 )
 
 type CloseScene struct {
-	msg    string
-	frames int
 }
 
 func NewCloseScene() *CloseScene {
-	s := &CloseScene{
-		msg: "bye",
-	}
+	s := &CloseScene{}
 	return s
 }
 
 func (s *CloseScene) Update(state State) error {
-	if s.frames <= 40 {
-		s.frames++
-		return nil
+	select {
+	case <-state.events.Disconnected():
+		return fmt.Errorf("game ended by player")
+	default:
 	}
-
-	return fmt.Errorf("game ended by player")
+	return nil
 }
 
 func (s *CloseScene) Draw(screen *ebiten.Image) {
 	screen.Fill(colornames.Dimgray)
-	ebitenutil.DebugPrint(screen, s.msg)
+	ebitenutil.DebugPrint(screen, "bye")
 }

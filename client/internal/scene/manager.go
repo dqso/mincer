@@ -7,6 +7,7 @@ import (
 )
 
 type Manager struct {
+	events  events
 	current Scene
 	next    Scene
 	world   entity.World
@@ -23,9 +24,18 @@ type Scene interface {
 	Draw(screen *ebiten.Image)
 }
 
-func NewManager(initial Scene, world entity.World) *Manager {
+type events interface {
+	Connected() chan struct{}
+	ConnectingInformation() chan string
+	Disconnected() chan struct{}
+
+	MustDisconnect()
+}
+
+func NewManager(initial Scene, events events, world entity.World) *Manager {
 	m := &Manager{
 		current: initial,
+		events:  events,
 		world:   world,
 	}
 
@@ -38,18 +48,21 @@ func NewManager(initial Scene, world entity.World) *Manager {
 
 type State struct {
 	manager *Manager
+	events  events
 	world   entity.World
 }
 
 func (m *Manager) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		m.Go(NewCloseScene())
+		m.events.MustDisconnect()
 		return nil
 	}
 
 	if m.transition == 0 {
 		return m.current.Update(State{
 			manager: m,
+			events:  m.events,
 			world:   m.world,
 		})
 	}

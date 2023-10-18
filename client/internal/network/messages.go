@@ -3,6 +3,7 @@ package network
 import (
 	"github.com/dqso/mincer/client/internal/api"
 	"github.com/dqso/mincer/client/internal/entity"
+	"github.com/wirepair/netcode"
 	"google.golang.org/protobuf/proto"
 	"log"
 )
@@ -83,4 +84,47 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		log.Printf("unknown message %s", code.String())
 		return
 	}
+}
+
+func (m *Manager) repeatingMessageSend() error {
+	direction, isMoving := m.world.Players().Me().Direction()
+
+	var err error
+	msg := &api.Message{Code: api.Code_CLIENT_INFO}
+	msg.Payload, err = proto.Marshal(&api.ClientInfo{
+		Direction: direction,
+		IsMoving:  isMoving,
+	})
+	if err != nil {
+		return err
+	}
+	bts, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	if err := m.nc.SendData(bts); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Manager) disconnect() error {
+	var err error
+	msg := &api.Message{Code: api.Code_QUIT}
+	msg.Payload, err = proto.Marshal(&api.Quit{})
+	if err != nil {
+		return err
+	}
+	bts, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	if err := m.nc.SendData(bts); err != nil {
+		return err
+	}
+	// TODO state to const
+	if err := m.nc.Disconnect(netcode.ClientState(100), true); err != nil {
+		return err
+	}
+	return nil
 }

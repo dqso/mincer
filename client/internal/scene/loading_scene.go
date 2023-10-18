@@ -1,32 +1,32 @@
 package scene
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"golang.org/x/image/colornames"
 )
 
 type LoadingScene struct {
-	onConnected func() chan struct{}
+	log string // TODO use ring
 }
 
-func NewLoadingScene(onConnected func() chan struct{}) *LoadingScene {
-	return &LoadingScene{
-		onConnected: onConnected,
-	}
+func NewLoadingScene() *LoadingScene {
+	return &LoadingScene{}
 }
 
 func (s *LoadingScene) Update(state State) error {
 	select {
+	case <-state.events.Connected():
+		state.manager.Go(NewMincerScene(state.world))
+	case info := <-state.events.ConnectingInformation():
+		s.log = info
 	default:
-		return nil
-	case <-s.onConnected():
 	}
-	state.manager.Go(NewMincerScene(state.world))
 	return nil
 }
 
 func (s *LoadingScene) Draw(screen *ebiten.Image) {
 	screen.Fill(colornames.Darkgreen)
-	ebitenutil.DebugPrint(screen, "connecting to server...")
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("connecting to server...\n%s", s.log))
 }

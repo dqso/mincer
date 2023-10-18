@@ -11,16 +11,24 @@ import (
 type Manager struct {
 	tokenUrl string
 	nc       *netcode.Client
-	world    entity.World
 
-	onConnected chan struct{}
+	world entity.World
+
+	connected             chan struct{}
+	connectingInformation chan string
+	disconnected          chan struct{}
+	mustDisconnect        chan struct{}
 }
 
 func NewManager(tokenUrl string, world entity.World) *Manager {
 	m := &Manager{
-		tokenUrl:    tokenUrl,
-		onConnected: make(chan struct{}),
-		world:       world,
+		tokenUrl: tokenUrl,
+		world:    world,
+
+		connected:             make(chan struct{}),
+		connectingInformation: make(chan string, 10),
+		disconnected:          make(chan struct{}),
+		mustDisconnect:        make(chan struct{}),
 	}
 
 	m.start()
@@ -28,17 +36,30 @@ func NewManager(tokenUrl string, world entity.World) *Manager {
 	return m
 }
 
-func (m *Manager) OnConnected() chan struct{} {
-	return m.onConnected
+func (m *Manager) Connected() chan struct{} {
+	return m.connected
+}
+
+func (m *Manager) ConnectingInformation() chan string {
+	return m.connectingInformation
+}
+
+func (m *Manager) Disconnected() chan struct{} {
+	return m.disconnected
+}
+
+func (m *Manager) MustDisconnect() {
+	close(m.mustDisconnect)
 }
 
 func (m *Manager) start() {
 	//done := make(chan struct{})
 	go func() {
-		//defer close(done)
+		defer close(m.disconnected)
 		id, token, err := m.getConnectToken(context.TODO())
 		if err != nil {
 			log.Print(err)
+			m.connectingInformation <- err.Error()
 			return
 		}
 		m.world.Players().Me().SetID(id)
@@ -46,14 +67,27 @@ func (m *Manager) start() {
 		m.nc.SetId(id)
 		if err := m.nc.Connect(); err != nil {
 			log.Print(err)
+			m.connectingInformation <- err.Error()
 			return
 		}
-		close(m.onConnected)
+		close(m.connected)
 
 		clientTime := float64(0)
 		delta := float64(1.0 / 60.0)
 		deltaTime := time.Duration(delta * float64(time.Second))
 		for {
+			if m.nc.GetState() <= netcode.StateDisconnected {
+				return
+			}
+			select {
+			case <-m.mustDisconnect:
+				if err := m.disconnect(); err != nil {
+					log.Print(err) // TODO logger
+				}
+				log.Print("disconnect...")
+				return
+			default:
+			}
 			m.nc.Update(clientTime)
 
 			data, _ := m.nc.RecvData()
@@ -64,6 +98,9 @@ func (m *Manager) start() {
 			time.Sleep(deltaTime)
 			clientTime += deltaTime.Seconds()
 
+			if err := m.repeatingMessageSend(); err != nil {
+				log.Print(err) // TODO logger
+			}
 			//case <-ctx.Done():
 			//	log.Printf("network manager closed with error: %v", ctx.Err())
 			//	return

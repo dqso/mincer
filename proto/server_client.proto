@@ -12,6 +12,7 @@ enum Code {
   PLAYER_LIST          = 6;
   ON_PLAYER_DISCONNECT = 7;
   QUIT                 = 8;
+  CLIENT_INFO          = 9;
 }
 
 message Message {
@@ -57,3 +58,8 @@ message PlayerList {
 }
 
 message Quit {}
+
+message ClientInfo {
+  double direction = 1;
+  bool   isMoving  = 2;
+}

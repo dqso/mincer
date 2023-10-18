@@ -1,5 +1,7 @@
 package entity
 
+import "math"
+
 type World interface {
 	AddPlayer(id uint64) (Player, error)
 	RemovePlayer(id uint64)
@@ -7,26 +9,27 @@ type World interface {
 }
 
 type world struct {
-	width   float64
-	height  float64
-	players Players
-	god     God
+	westNorth Point
+	eastSouth Point
+	players   Players
+	god       God
 }
 
 func NewWorld(seed int64, westNorth, eastSouth Point) World {
 	return &world{
-		// TODO w, h
-		players: NewPlayers(),
-		god:     NewGod(seed),
+		westNorth: westNorth,
+		eastSouth: eastSouth,
+		players:   NewPlayers(),
+		god:       NewGod(seed),
 	}
 }
 
 func (w *world) Width() float64 {
-	return w.width
+	return math.Abs(w.westNorth.X - w.eastSouth.X)
 }
 
 func (w *world) Height() float64 {
-	return w.height
+	return math.Abs(w.westNorth.Y - w.eastSouth.Y)
 }
 
 func (w *world) God() God {
@@ -34,7 +37,7 @@ func (w *world) God() God {
 }
 
 func (w *world) AddPlayer(id uint64) (Player, error) {
-	if w.players.IsExists(id) {
+	if _, ok := w.players.Get(id); ok {
 		return nil, ErrPlayerAlreadyExists
 	}
 	p := NewPlayer(id)
