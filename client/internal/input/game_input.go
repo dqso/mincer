@@ -6,10 +6,11 @@ import (
 )
 
 type GameInput struct {
-	Left  int
-	Up    int
-	Right int
-	Down  int
+	Left   int
+	Up     int
+	Right  int
+	Down   int
+	Attack int
 }
 
 func NewGameInput() *GameInput {
@@ -21,6 +22,7 @@ func (i *GameInput) Update() {
 	i.Up = max(inpututil.KeyPressDuration(ebiten.KeyUp), inpututil.KeyPressDuration(ebiten.KeyW))
 	i.Right = max(inpututil.KeyPressDuration(ebiten.KeyRight), inpututil.KeyPressDuration(ebiten.KeyD))
 	i.Down = max(inpututil.KeyPressDuration(ebiten.KeyDown), inpututil.KeyPressDuration(ebiten.KeyS))
+	i.Attack = inpututil.KeyPressDuration(ebiten.KeySpace)
 }
 
 func (i *GameInput) Direction() (direction float64, isMoving bool) {

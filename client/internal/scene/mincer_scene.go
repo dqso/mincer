@@ -33,6 +33,7 @@ func (s *MincerScene) Update(state State) error {
 	}
 	s.input.Update()
 	state.world.Players().Me().SetDirection(s.input.Direction())
+	state.world.Players().Me().SetAttack(s.input.Attack > 0)
 	s.cx, s.cy = s.world.Players().Me().Position()
 	return nil
 }
@@ -52,6 +53,9 @@ func (s *MincerScene) Draw(screen *ebiten.Image) {
 const playerBorderRadius = 1.5
 
 func (s *MincerScene) drawPlayer(screen *ebiten.Image, p entity.Player, border color.Color) {
+	if !p.IsLoaded() {
+		return
+	}
 	x, y := p.Position()
 	x = x - s.cx + float32(screen.Bounds().Dx())/2
 	y = y - s.cy + float32(screen.Bounds().Dy())/2
@@ -61,7 +65,11 @@ func (s *MincerScene) drawPlayer(screen *ebiten.Image, p entity.Player, border c
 	} else {
 		vector.DrawFilledCircle(screen, x, y, radius+playerBorderRadius, border, true)
 	}
-	vector.DrawFilledCircle(screen, x, y, radius, p.Color(), true)
+	bodyColor := p.Color()
+	if p.IsDead() {
+		bodyColor = entity.ColorDeadPlayer()
+	}
+	vector.DrawFilledCircle(screen, x, y, radius, bodyColor, true)
 }
 
 const hudElementWidth = 100.0
@@ -70,7 +78,11 @@ const hudElementHeight = 15.0
 func (s *MincerScene) drawHUD(screen *ebiten.Image) {
 	me := s.world.Players().Me()
 	vector.StrokeRect(screen, 5, 5, hudElementWidth, hudElementHeight, 2, colornames.Red, true)
-	hpWidth := hudElementWidth * (1 - 1/float32(me.HP()))
+	hpWidth := hudElementWidth * (float32(me.HP()) / 100.0)
+	// w = 1000
+	// hp = 100 w = 1000 []
+	// hp = 0 w = 0
+	// hp = 50 w = 500
 	vector.DrawFilledRect(screen, 5, 5, hpWidth, hudElementHeight, colornames.Red, true)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("HP: %d", me.HP()), 7, 6)
 }

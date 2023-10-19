@@ -11,6 +11,7 @@ import (
 type World interface {
 	NewPlayer(id uint64) (Player, error)
 	NewBot() (Bot, error)
+	Respawn(p Player)
 	SizeRect() Rect
 	Players() PlayerList
 	SearchNearby(point Point, cb func(p Player) Player) Player
@@ -77,6 +78,11 @@ func (w *world) NewBot() (Bot, error) {
 	b.SetPosition(w.acquirePosition(b.Radius()))
 	w.playerList.Add(b)
 	return b, nil
+}
+
+func (w *world) Respawn(p Player) {
+	p.SetHP(p.MaxHP())
+	p.SetPosition(w.acquirePosition(p.Radius()))
 }
 
 func (w *world) acquireClass() Class {

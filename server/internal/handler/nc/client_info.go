@@ -20,5 +20,5 @@ func (r *ClientInfo) Validate() error {
 }
 
 func (r *ClientInfo) Execute(ctx context.Context, fromClientID uint64, uc usecase) error {
-	return uc.ClientInfo(ctx, fromClientID, r.Direction, r.IsMoving)
+	return uc.ClientInfo(ctx, fromClientID, r.Direction, r.IsMoving, r.Attack)
 }

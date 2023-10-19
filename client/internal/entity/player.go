@@ -15,6 +15,8 @@ type Me interface {
 
 	Direction() (float64, bool)
 	SetDirection(d float64, isMoving bool)
+	Attack() bool
+	SetAttack(v bool)
 }
 
 type me struct {
@@ -22,14 +24,13 @@ type me struct {
 
 	direction float64
 	isMoving  bool
-	speed     float64
+	attack    bool
 }
 
 func newEmptyMe() Me {
 	return &me{
 		Player:    newEmptyPlayer(),
 		direction: 0,
-		speed:     0,
 	}
 }
 
@@ -37,23 +38,22 @@ func (m *me) GetPlayer() Player                     { return m.Player }
 func (m *me) SetID(id uint64)                       { m.Player.setID(id) }
 func (m *me) Direction() (float64, bool)            { return m.direction, m.isMoving }
 func (m *me) SetDirection(d float64, isMoving bool) { m.direction, m.isMoving = d, isMoving }
+func (m *me) Attack() bool                          { return m.attack }
+func (m *me) SetAttack(v bool)                      { m.attack = v }
 
 type Player interface {
 	ID() uint64
 	setID(id uint64)
+	IsLoaded() bool
 
-	Class() Class
-	SetClass(c Class)
+	PlayerStats
+	SetStats(stats PlayerStats)
+
 	Color() color.Color
 
 	HP() int64
 	SetHP(hp int64)
-
-	Radius() float32
-	SetRadius(r float64)
-
-	Speed() float32
-	SetSpeed(s float64)
+	IsDead() bool
 
 	Position() (float32, float32)
 	SetPosition(x, y float64)
@@ -62,12 +62,11 @@ type Player interface {
 type player struct {
 	id uint64
 
-	class  Class
-	color  color.Color
-	hp     int64
-	radius float32
-	speed  float32
+	PlayerStats
 
+	color color.Color
+
+	hp   int64
 	x, y float32
 }
 
@@ -77,34 +76,31 @@ func newEmptyPlayer() Player {
 	}
 }
 
-func NewPlayer(id uint64, class Class, hp int64, radius, speed float64, x, y float64) Player {
+func NewPlayer(id uint64, hp int64, playerStats PlayerStats, x, y float64) Player {
 	return &player{
-		id:     id,
-		class:  class,
-		color:  class.color(),
-		hp:     hp,
-		radius: float32(radius),
-		speed:  float32(speed),
-		x:      float32(x),
-		y:      float32(y),
+		id:          id,
+		PlayerStats: playerStats,
+		color:       playerStats.Class().color(),
+		hp:          hp,
+		x:           float32(x),
+		y:           float32(y),
 	}
 }
 
 func (p *player) ID() uint64      { return p.id }
+func (p *player) IsLoaded() bool  { return p.PlayerStats != nil }
 func (p *player) setID(id uint64) { p.id = id }
 
-func (p *player) Class() Class       { return p.class }
-func (p *player) SetClass(c Class)   { p.class, p.color = c, c.color() }
+func (p *player) SetStats(stats PlayerStats) {
+	p.PlayerStats = stats
+	p.color = stats.Class().color()
+}
+
 func (p *player) Color() color.Color { return p.color }
 
 func (p *player) HP() int64      { return p.hp }
 func (p *player) SetHP(hp int64) { p.hp = hp }
-
-func (p *player) Radius() float32     { return p.radius }
-func (p *player) SetRadius(r float64) { p.radius = float32(r) }
-
-func (p *player) Speed() float32     { return p.speed }
-func (p *player) SetSpeed(s float64) { p.speed = float32(s) }
+func (p *player) IsDead() bool   { return p.hp <= 0 }
 
 func (p *player) Position() (float32, float32) { return p.x, p.y }
 func (p *player) SetPosition(x, y float64)     { p.x, p.y = float32(x), float32(y) }
@@ -132,6 +128,10 @@ func (c Class) color() color.Color {
 
 func ColorBorderMe() color.Color {
 	return colornames.White
+}
+
+func ColorDeadPlayer() color.Color {
+	return color.RGBA{R: 0xAA, G: 0xAA, B: 0xAA, A: 0}
 }
 
 type Players interface {

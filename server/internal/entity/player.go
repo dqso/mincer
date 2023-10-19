@@ -10,101 +10,87 @@ import (
 type Player interface {
 	ID() uint64
 
-	Class() Class
-	SetClass(c Class)
+	GetStats() PlayerStats
+	PlayerStats
 
 	HP() int64
+	IsDead() bool
 	SetHP(hp int64)
-
-	Radius() float64
-	SetRadius(r float64)
-
-	Speed() float64
-	SetSpeed(s float64)
 
 	Position() Point
 	SetPosition(p Point)
 
 	SetDirection(direction float64, isMoving bool)
 	Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, wasMoved bool)
+	SetAttack(a bool)
+	Attack() bool
+	Relax(lifeTime time.Duration)
 }
 
 type player struct {
 	id uint64
 
-	mxStats sync.RWMutex
-	class   Class
-	hp      int64
-	radius  float64
-	speed   float64
+	PlayerStats
+
+	mxHP sync.RWMutex
+	hp   int64
 
 	mxPosition sync.RWMutex
 	x, y       float64
 	// for calculating x and y
 	direction float64
 	isMoving  bool
+
+	mxAttack sync.Mutex
+	isAttack bool
+	coolDown float64
 }
 
 func NewPlayer(id uint64, class Class) Player {
-	return &player{
-		id:     id,
-		class:  class,
-		hp:     defaultPlayerHP,
-		radius: defaultPlayerRadius,
-		speed:  defaultPlayerSpeed,
-		x:      0,
-		y:      0,
+	p := &player{
+		id: id,
+		PlayerStats: newPlayerStats(
+			class,
+			defaultPlayerRadius,
+			defaultPlayerSpeed,
+			defaultPlayerHP,
+			defaultPlayerCoolDown,
+			defaultPlayerPower,
+		),
+		x: 0,
+		y: 0,
 	}
+	p.coolDown = p.MaxCoolDown()
+	p.hp = p.MaxHP()
+	return p
 }
 
 func (p *player) ID() uint64 { return p.id }
 
-func (p *player) Class() Class {
-	p.mxStats.RLock()
-	defer p.mxStats.RUnlock()
-	return p.class
-}
-
-func (p *player) SetClass(c Class) {
-	p.mxStats.Lock()
-	defer p.mxStats.Unlock()
-	p.class = c
+func (p *player) GetStats() PlayerStats {
+	return p.PlayerStats
 }
 
 func (p *player) HP() int64 {
-	p.mxStats.RLock()
-	defer p.mxStats.RUnlock()
+	p.mxHP.RLock()
+	defer p.mxHP.RUnlock()
 	return p.hp
 }
 
+func (p *player) IsDead() bool {
+	return p.HP() <= 0
+}
+
 func (p *player) SetHP(hp int64) {
-	p.mxStats.Lock()
-	defer p.mxStats.Unlock()
+	if hp < 0 {
+		hp = 0
+	}
+	if p.MaxHP() < hp {
+		hp = 100
+	}
+	p.mxHP.Lock()
+	defer p.mxHP.Unlock()
 	p.hp = hp
-}
-
-func (p *player) Radius() float64 {
-	p.mxStats.RLock()
-	defer p.mxStats.RUnlock()
-	return p.radius
-}
-
-func (p *player) SetRadius(r float64) {
-	p.mxStats.Lock()
-	defer p.mxStats.Unlock()
-	p.radius = r
-}
-
-func (p *player) Speed() float64 {
-	p.mxStats.RLock()
-	defer p.mxStats.RUnlock()
-	return p.speed
-}
-
-func (p *player) SetSpeed(s float64) {
-	p.mxStats.Lock()
-	defer p.mxStats.Unlock()
-	p.speed = s
 }
 
 func (p *player) Position() Point {
@@ -126,20 +112,53 @@ func (p *player) SetDirection(direction float64, isMoving bool) {
 }
 
 func (p *player) Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, wasMoved bool) {
+	if p.IsDead() {
+		return Point{X: p.x, Y: p.y}, false
+	}
 	p.mxPosition.Lock()
 	defer p.mxPosition.Unlock()
 	if !p.isMoving {
 		return Point{X: p.x, Y: p.y}, false
 	}
 	sin, cos := math.Sincos(p.direction * math.Pi / 180)
-	x := p.x + p.speed*lifeTime.Seconds()*sin
-	y := p.y - p.speed*lifeTime.Seconds()*cos
+	x := p.x + p.Speed()*lifeTime.Seconds()*sin
+	y := p.y - p.Speed()*lifeTime.Seconds()*cos
 	if x < mapSize.LeftUp.X || mapSize.RightDown.X < x ||
 		y < mapSize.LeftUp.Y || mapSize.RightDown.Y < y {
 		return Point{X: p.x, Y: p.y}, false
 	}
 	p.x, p.y = x, y
 	return Point{X: p.x, Y: p.y}, true
+}
+
+func (p *player) SetAttack(a bool) {
+	p.mxAttack.Lock()
+	defer p.mxAttack.Unlock()
+	p.isAttack = a
+}
+
+func (p *player) Attack() (isAllowed bool) {
+	if p.HP() <= 0 {
+		return false
+	}
+	p.mxAttack.Lock()
+	defer p.mxAttack.Unlock()
+	defer func() {
+		if isAllowed {
+			p.isAttack = false
+			p.coolDown = 0
+		}
+	}()
+	if !p.isAttack || p.coolDown < p.MaxCoolDown() {
+		return false
+	}
+	return true
+}
+
+func (p *player) Relax(lifeTime time.Duration) {
+	p.mxAttack.Lock()
+	defer p.mxAttack.Unlock()
+	p.coolDown += p.MaxCoolDown() * lifeTime.Seconds()
 }
 
 type Class int32

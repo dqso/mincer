@@ -36,6 +36,8 @@ func newBot(w World, id uint32, class Class) (Bot, func()) {
 	}
 }
 
+const botRespawnTime = time.Second * 5
+
 func (b *bot) life(stop chan struct{}) {
 	for {
 		select {
@@ -43,6 +45,15 @@ func (b *bot) life(stop chan struct{}) {
 			return
 		default:
 		}
+		//log.Printf("bot %d: New iteration my life", b.BotID())
+
+		if b.IsDead() {
+			log.Printf("bot %d: I'm dead. I'm waiting %s and I'm going to respawn", b.BotID(), botRespawnTime)
+			time.Sleep(botRespawnTime)
+			b.world.Respawn(b.GetPlayer())
+			continue
+		}
+
 		// TODO
 		if b.target == nil {
 			//log.Printf("%d: need target", b.ID())

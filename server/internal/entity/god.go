@@ -33,11 +33,13 @@ func (g *god) Float(min, max float64) float64 {
 const (
 	defaultPlayerHP int64 = 100
 
-	defaultPlayerRadius float64 = 10.0
-	defaultPlayerSpeed  float64 = 100.0
+	defaultPlayerRadius   float64 = 10.0
+	defaultPlayerSpeed    float64 = 100.0
+	defaultPlayerCoolDown float64 = 10.0
+	defaultPlayerPower    float64 = 100.0
 
 	MaxNorth float64 = 0.0
 	MaxWest  float64 = 0.0
-	MaxSouth float64 = 1000.0
-	MaxEast  float64 = 1000.0
+	MaxSouth float64 = 300.0
+	MaxEast  float64 = 300.0
 )

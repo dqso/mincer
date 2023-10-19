@@ -8,9 +8,14 @@ enum Code {
 
   reserved 2 to 9;
 
+  // To every client
+
   ON_PLAYER_CONNECT    = 10;
   ON_PLAYER_DISCONNECT = 11;
-  PLAYER_LIST          = 12;
+
+  // To one client
+
+  PLAYER_LIST = 12;
 
   reserved 13 to 19;
 
@@ -21,12 +26,12 @@ enum Code {
 
   reserved 22 to 49;
 
+  // To every client
+
   SPAWN_PLAYER        = 50;
-  SET_PLAYER_CLASS    = 51;
+  SET_PLAYER_STATS    = 51;
   SET_PLAYER_HP       = 52;
-  SET_PLAYER_RADIUS   = 53;
-  SET_PLAYER_SPEED    = 54;
-  SET_PLAYER_POSITION = 55;
+  SET_PLAYER_POSITION = 53;
 }
 
 message Message {
@@ -57,6 +62,7 @@ message PlayerList {
 message ClientInfo {
   double direction = 1;
   bool   isMoving  = 2;
+  bool   attack    = 3;
 }
 
 enum Class {
@@ -66,44 +72,41 @@ enum Class {
   RANGER        = 3;
 }
 
+message PlayerStats {
+  Class  class       = 1;
+  double radius      = 2;
+  double speed       = 3;
+  int64  maxHP       = 4;
+  double maxCoolDown = 5;
+  double power       = 6;
+}
+
 message Player {
-  uint64 id    = 1;
+  uint64 id = 1;
 
   reserved 2 to 9;
 
-  Class  class   = 10;
-  int64  hp      = 11;
-  double radius  = 12;
-  double speed   = 13;
+  PlayerStats stats = 10;
 
-  reserved 14 to 19;
+  reserved 11 to 19;
 
-  double x = 20;
-  double y = 21;
+  int64  hp = 20;
+  double x  = 21;
+  double y  = 22;
 }
 
 message SpawnPlayer {
   Player player = 1;
 }
 
-message SetPlayerClass {
-  uint64 id    = 1;
-  Class  class = 2;
+message SetPlayerStats {
+  uint64      id    = 1;
+  PlayerStats stats = 2;
 }
 
 message SetPlayerHP {
   uint64 id = 1;
   int64  hp = 2;
-}
-
-message SetPlayerRadius {
-  uint64 id     = 1;
-  double radius = 2;
-}
-
-message SetPlayerSpeed {
-  uint64 id    = 1;
-  double speed = 2;
 }
 
 message SetPlayerPosition {

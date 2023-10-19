@@ -67,8 +67,8 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		createOrChangePlayer(m.world.Players(), msg.Player)
 	//log.Printf("Изменился %d: (%0.2f, %0.2f), здоровье %d, радиус %0.2f, умер %v", message.PlayerId, message.X, message.Y, message.Hp, message.Radius, message.Dead)
 
-	case api.Code_SET_PLAYER_CLASS:
-		var msg api.SetPlayerClass
+	case api.Code_SET_PLAYER_STATS:
+		var msg api.SetPlayerStats
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			log.Print(err) // TODO logger
 			return
@@ -77,7 +77,7 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		if !ok {
 			return
 		}
-		p.SetClass(entity.Class(msg.Class))
+		p.SetStats(dtoPlayerStats(msg.Stats))
 
 	case api.Code_SET_PLAYER_HP:
 		var msg api.SetPlayerHP
@@ -90,30 +90,6 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			return
 		}
 		p.SetHP(msg.Hp)
-
-	case api.Code_SET_PLAYER_RADIUS:
-		var msg api.SetPlayerRadius
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			log.Print(err) // TODO logger
-			return
-		}
-		p, ok := m.world.Players().Get(msg.Id)
-		if !ok {
-			return
-		}
-		p.SetRadius(msg.Radius)
-
-	case api.Code_SET_PLAYER_SPEED:
-		var msg api.SetPlayerSpeed
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			log.Print(err) // TODO logger
-			return
-		}
-		p, ok := m.world.Players().Get(msg.Id)
-		if !ok {
-			return
-		}
-		p.SetSpeed(msg.Speed)
 
 	case api.Code_SET_PLAYER_POSITION:
 		var msg api.SetPlayerPosition
@@ -134,27 +110,39 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 }
 
 func createOrChangePlayer(players entity.Players, p *api.Player) {
+	stats := dtoPlayerStats(p.Stats)
 	player, ok := players.Get(p.Id)
 	if !ok {
-		player = entity.NewPlayer(p.Id, entity.Class(p.Class), p.Hp, p.Radius, p.Speed, p.X, p.Y)
+		player = entity.NewPlayer(p.Id, p.Hp, stats, p.X, p.Y)
 		players.Add(player)
 	} else {
-		player.SetClass(entity.Class(p.Class))
+		player.SetStats(stats)
 		player.SetHP(p.Hp)
-		player.SetRadius(p.Radius)
-		player.SetSpeed(p.Speed)
 		player.SetPosition(p.X, p.Y)
 	}
 }
 
+func dtoPlayerStats(stats *api.PlayerStats) entity.PlayerStats {
+	return entity.NewPlayerStats(
+		entity.Class(stats.Class),
+		stats.Radius,
+		stats.Speed,
+		stats.MaxHP,
+		stats.MaxCoolDown,
+		stats.Power,
+	)
+}
+
 func (m *Manager) repeatingMessageSend() error {
-	direction, isMoving := m.world.Players().Me().Direction()
+	me := m.world.Players().Me()
+	direction, isMoving := me.Direction()
 
 	var err error
 	msg := &api.Message{Code: api.Code_CLIENT_INFO}
 	msg.Payload, err = proto.Marshal(&api.ClientInfo{
 		Direction: direction,
 		IsMoving:  isMoving,
+		Attack:    me.Attack(),
 	})
 	if err != nil {
 		return err

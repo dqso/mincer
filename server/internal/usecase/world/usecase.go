@@ -15,10 +15,8 @@ type ncProducer interface {
 	OnPlayerDisconnect(id uint64)
 	PlayerList(toPlayerID uint64, players []entity.Player)
 	SpawnPlayer(player entity.Player)
-	SetPlayerClass(id uint64, class entity.Class)
+	SetPlayerStats(id uint64, class entity.Class, radius, speed float64, maxHP int64, maxCoolDown, power float64)
 	SetPlayerHP(id uint64, hp int64)
-	SetPlayerRadius(id uint64, radius float64)
-	SetPlayerSpeed(id uint64, speed float64)
 	SetPlayerPosition(id uint64, position entity.Point)
 }
 
