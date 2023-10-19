@@ -46,7 +46,7 @@ func (s *MincerScene) Draw(screen *ebiten.Image) {
 	}
 	s.drawHUD(screen)
 	//ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS %0.2f", ebiten.ActualFPS()))
-	//ebitenutil.DebugPrintAt(screen, fmt.Sprintf("(%0.2f, %0.2f)", s.cx, s.cy), 0, 15)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("(%0.2f, %0.2f)", s.cx, s.cy), 0, 15)
 }
 
 const playerBorderRadius = 1.5

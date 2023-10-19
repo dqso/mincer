@@ -23,6 +23,8 @@ type config interface {
 }
 
 type usecase interface {
+	AddBot() error // TODO test
+
 	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving bool) error
 	Quit(ctx context.Context, fromUserID uint64) error
 	OnPlayerConnect(connect chan uint64, disconnect chan uint64)
@@ -55,6 +57,10 @@ func (c *Consumer) listen(ctx context.Context) {
 
 	// TODO ctx
 	stopped := c.usecase.LifeCycle(ctx)
+
+	//if err := c.usecase.AddBot(); err != nil {
+	//	log.Print(err)
+	//}
 
 	for {
 		// TODO startTime := time.Now()

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (uc Usecase) LifeCycle(ctx context.Context) chan struct{} {
+func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 	stopped := make(chan struct{})
 
 	go func() {
@@ -22,7 +22,7 @@ func (uc Usecase) LifeCycle(ctx context.Context) chan struct{} {
 			}
 
 			for _, player := range uc.world.Players().Slice() {
-				if newPos, wasMoved := player.Move(deltaTime); wasMoved {
+				if newPos, wasMoved := player.Move(deltaTime, uc.world.SizeRect()); wasMoved {
 					uc.ncProducer.SetPlayerPosition(player.ID(), newPos)
 				}
 			}

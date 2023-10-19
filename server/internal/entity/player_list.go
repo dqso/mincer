@@ -1,6 +1,8 @@
 package entity
 
-import "sync"
+import (
+	"sync"
+)
 
 type PlayerList interface {
 	Get(id uint64) (Player, bool)
@@ -14,10 +16,11 @@ type playerList struct {
 	mxByID sync.RWMutex
 }
 
-func NewPlayers() PlayerList {
-	return &playerList{
+func NewPlayerList() PlayerList {
+	pp := &playerList{
 		byID: make(map[uint64]Player),
 	}
+	return pp
 }
 
 func (pp *playerList) Get(id uint64) (Player, bool) {

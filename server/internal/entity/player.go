@@ -26,7 +26,7 @@ type Player interface {
 	SetPosition(p Point)
 
 	SetDirection(direction float64, isMoving bool)
-	Move(lifeTime time.Duration) (newPosition Point, wasMoved bool)
+	Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, wasMoved bool)
 }
 
 type player struct {
@@ -125,15 +125,20 @@ func (p *player) SetDirection(direction float64, isMoving bool) {
 	p.direction, p.isMoving = direction, isMoving
 }
 
-func (p *player) Move(lifeTime time.Duration) (newPosition Point, wasMoved bool) {
+func (p *player) Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, wasMoved bool) {
 	p.mxPosition.Lock()
 	defer p.mxPosition.Unlock()
 	if !p.isMoving {
 		return Point{X: p.x, Y: p.y}, false
 	}
 	sin, cos := math.Sincos(p.direction * math.Pi / 180)
-	p.x = p.x + p.speed*lifeTime.Seconds()*sin
-	p.y = p.y - p.speed*lifeTime.Seconds()*cos
+	x := p.x + p.speed*lifeTime.Seconds()*sin
+	y := p.y - p.speed*lifeTime.Seconds()*cos
+	if x < mapSize.LeftUp.X || mapSize.RightDown.X < x ||
+		y < mapSize.LeftUp.Y || mapSize.RightDown.Y < y {
+		return Point{X: p.x, Y: p.y}, false
+	}
+	p.x, p.y = x, y
 	return Point{X: p.x, Y: p.y}, true
 }
 
