@@ -8,6 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/stretchr/testify v1.8.4
 	github.com/wirepair/netcode v0.0.0-20181109005356-568e8d518e34
+	go.uber.org/mock v0.3.0
 	google.golang.org/protobuf v1.31.0
 )
 

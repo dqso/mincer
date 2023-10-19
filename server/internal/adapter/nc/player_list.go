@@ -6,12 +6,12 @@ import (
 	"log"
 )
 
-func (p *Producer) DirectPlayerList(toPlayerID uint64, players []entity.Player) {
+func (p *Producer) PlayerList(toPlayerID uint64, players []entity.Player) {
 	msg := &api.PlayerList{
-		Players: make([]*api.PublicPlayer, 0, len(players)),
+		Players: make([]*api.Player, 0, len(players)),
 	}
 	for _, player := range players {
-		msg.Players = append(msg.Players, dtoPlayerToPublicPlayer(player))
+		msg.Players = append(msg.Players, dtoPlayerToApiPlayer(player))
 	}
 	bts, err := p.marshalMessage(api.Code_PLAYER_LIST, msg)
 	if err != nil {

@@ -1,6 +1,9 @@
 package entity
 
 import (
+	"github.com/dqso/mincer/client/internal/api"
+	"golang.org/x/exp/shiny/materialdesign/colornames"
+	"image/color"
 	"sort"
 	"sync"
 )
@@ -12,7 +15,6 @@ type Me interface {
 
 	Direction() (float64, bool)
 	SetDirection(d float64, isMoving bool)
-	Speed() float64
 }
 
 type me struct {
@@ -35,53 +37,101 @@ func (m *me) GetPlayer() Player                     { return m.Player }
 func (m *me) SetID(id uint64)                       { m.Player.setID(id) }
 func (m *me) Direction() (float64, bool)            { return m.direction, m.isMoving }
 func (m *me) SetDirection(d float64, isMoving bool) { m.direction, m.isMoving = d, isMoving }
-func (m *me) Speed() float64                        { return m.speed }
 
 type Player interface {
 	ID() uint64
 	setID(id uint64)
-	Position() (float64, float64)
+
+	Class() Class
+	SetClass(c Class)
+	Color() color.Color
+
+	HP() int64
+	SetHP(hp int64)
+
+	Radius() float32
+	SetRadius(r float64)
+
+	Speed() float32
+	SetSpeed(s float64)
+
+	Position() (float32, float32)
 	SetPosition(x, y float64)
-	PositionFloat32() (float32, float32)
-	SetStats(hp int64, radius float64, dead bool)
-	Radius() float64
-	RadiusFloat32() float32
 }
 
 type player struct {
 	id uint64
 
-	x, y float64
-
+	class  Class
+	color  color.Color
 	hp     int64
-	radius float64
-	dead   bool
+	radius float32
+	speed  float32
+
+	x, y float32
 }
 
 func newEmptyPlayer() Player {
-	return &player{}
-}
-
-func NewPlayer(id uint64, x, y float64, hp int64, radius float64, dead bool) Player {
 	return &player{
-		id:     id,
-		x:      x,
-		y:      y,
-		hp:     hp,
-		radius: radius,
-		dead:   dead,
+		color: colornames.White,
 	}
 }
 
-func (p *player) ID() uint64                          { return p.id }
-func (p *player) setID(id uint64)                     { p.id = id }
-func (p *player) Position() (float64, float64)        { return p.x, p.y }
-func (p *player) SetPosition(x, y float64)            { p.x, p.y = x, y }
-func (p *player) PositionFloat32() (float32, float32) { return float32(p.x), float32(p.y) }
-func (p *player) Radius() float64                     { return p.radius }
-func (p *player) RadiusFloat32() float32              { return float32(p.radius) }
-func (p *player) SetStats(hp int64, radius float64, dead bool) {
-	p.hp, p.radius, p.dead = hp, radius, dead
+func NewPlayer(id uint64, class Class, hp int64, radius, speed float64, x, y float64) Player {
+	return &player{
+		id:     id,
+		class:  class,
+		color:  class.color(),
+		hp:     hp,
+		radius: float32(radius),
+		speed:  float32(speed),
+		x:      float32(x),
+		y:      float32(y),
+	}
+}
+
+func (p *player) ID() uint64      { return p.id }
+func (p *player) setID(id uint64) { p.id = id }
+
+func (p *player) Class() Class       { return p.class }
+func (p *player) SetClass(c Class)   { p.class, p.color = c, c.color() }
+func (p *player) Color() color.Color { return p.color }
+
+func (p *player) HP() int64      { return p.hp }
+func (p *player) SetHP(hp int64) { p.hp = hp }
+
+func (p *player) Radius() float32     { return p.radius }
+func (p *player) SetRadius(r float64) { p.radius = float32(r) }
+
+func (p *player) Speed() float32     { return p.speed }
+func (p *player) SetSpeed(s float64) { p.speed = float32(s) }
+
+func (p *player) Position() (float32, float32) { return p.x, p.y }
+func (p *player) SetPosition(x, y float64)     { p.x, p.y = float32(x), float32(y) }
+
+type Class api.Class
+
+const (
+	Warrior = Class(api.Class_WARRIOR)
+	Mage    = Class(api.Class_MAGE)
+	Ranger  = Class(api.Class_RANGER)
+)
+
+func (c Class) color() color.Color {
+	switch c {
+	case Warrior:
+		return colornames.Red200
+	case Mage:
+		return colornames.Blue200
+	case Ranger:
+		return colornames.Green200
+	default:
+		return colornames.White
+	}
+}
+
+func ColorBorderMe() color.Color {
+	return colornames.White
 }
 
 type Players interface {

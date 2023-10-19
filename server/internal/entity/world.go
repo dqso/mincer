@@ -3,15 +3,14 @@ package entity
 import "math"
 
 type World interface {
-	AddPlayer(id uint64) (Player, error)
-	RemovePlayer(id uint64)
-	Players() Players
+	NewPlayer(id uint64) (Player, error)
+	Players() PlayerList
 }
 
 type world struct {
 	westNorth Point
 	eastSouth Point
-	players   Players
+	players   PlayerList
 	god       God
 }
 
@@ -36,24 +35,21 @@ func (w *world) God() God {
 	return w.god
 }
 
-func (w *world) AddPlayer(id uint64) (Player, error) {
+func (w *world) NewPlayer(id uint64) (Player, error) {
 	if _, ok := w.players.Get(id); ok {
 		return nil, ErrPlayerAlreadyExists
 	}
-	p := NewPlayer(id)
+	class := Classes()[w.God().Int(0, len(Classes())-1)]
+	p := NewPlayer(id, class)
 	radius := p.Radius()
-	p.SetPosition(
-		w.God().Float(radius, w.Width()-radius),
-		w.God().Float(radius, w.Height()-radius),
-	)
+	p.SetPosition(Point{
+		X: w.God().Float(radius, w.Width()-radius),
+		Y: w.God().Float(radius, w.Height()-radius),
+	})
 	w.players.Add(p)
 	return p, nil
 }
 
-func (w *world) RemovePlayer(id uint64) {
-	w.players.Remove(id)
-}
-
-func (w *world) Players() Players {
+func (w *world) Players() PlayerList {
 	return w.players
 }

@@ -23,8 +23,8 @@ type config interface {
 }
 
 type usecase interface {
-	Ping(ctx context.Context, fromUserID uint64, ping string) error
 	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving bool) error
+	Quit(ctx context.Context, fromUserID uint64) error
 	OnPlayerConnect(connect chan uint64, disconnect chan uint64)
 	LifeCycle(ctx context.Context) chan struct{}
 }

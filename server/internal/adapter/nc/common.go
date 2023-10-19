@@ -5,15 +5,20 @@ import (
 	"github.com/dqso/mincer/server/internal/entity"
 )
 
-func dtoPlayerToPublicPlayer(player entity.Player) *api.PublicPlayer {
+func (p *Producer) SendPayloadToClient(clientId uint64, payloadData []byte) error {
+	// TODO log
+	return p.server.SendPayloadToClient(clientId, payloadData)
+}
+
+func dtoPlayerToApiPlayer(player entity.Player) *api.Player {
 	p := player.Position()
-	hp, radius, dead := player.PublicStats()
-	return &api.PublicPlayer{
-		PlayerId: player.ID(),
-		X:        p.X,
-		Y:        p.Y,
-		Hp:       hp,
-		Radius:   radius,
-		Dead:     dead,
+	return &api.Player{
+		Id:     player.ID(),
+		Class:  api.Class(player.Class()),
+		Hp:     player.HP(),
+		Radius: player.Radius(),
+		Speed:  player.Speed(),
+		X:      p.X,
+		Y:      p.Y,
 	}
 }

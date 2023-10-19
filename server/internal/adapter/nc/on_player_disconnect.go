@@ -14,6 +14,7 @@ func (p *Producer) OnPlayerDisconnect(id uint64) {
 func (p *Producer) onPlayerDisconnectBatch() []*api.Message {
 	p.mxOnPlayerDisconnect.Lock()
 	defer p.mxOnPlayerDisconnect.Unlock()
+	defer clear(p.onPlayerDisconnect)
 	batch := make([]*api.Message, 0, len(p.onPlayerDisconnect))
 	for playerID := range p.onPlayerDisconnect {
 		msg, err := p.prepareMessage(api.Code_ON_PLAYER_DISCONNECT, &api.OnPlayerDisconnect{
@@ -25,6 +26,5 @@ func (p *Producer) onPlayerDisconnectBatch() []*api.Message {
 		}
 		batch = append(batch, msg)
 	}
-	clear(p.onPlayerDisconnect)
 	return batch
 }

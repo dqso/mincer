@@ -1,7 +1,6 @@
 package usecase_world
 
 import (
-	"context"
 	"github.com/dqso/mincer/server/internal/entity"
 	"time"
 )
@@ -12,11 +11,15 @@ type Usecase struct {
 }
 
 type ncProducer interface {
-	Pong(ctx context.Context, toClientID uint64, pong string) error
 	OnPlayerConnect(id uint64)
 	OnPlayerDisconnect(id uint64)
-	DirectPlayerList(toPlayerID uint64, players []entity.Player)
-	OnPlayerChange(player entity.Player)
+	PlayerList(toPlayerID uint64, players []entity.Player)
+	SpawnPlayer(player entity.Player)
+	SetPlayerClass(id uint64, class entity.Class)
+	SetPlayerHP(id uint64, hp int64)
+	SetPlayerRadius(id uint64, radius float64)
+	SetPlayerSpeed(id uint64, speed float64)
+	SetPlayerPosition(id uint64, position entity.Point)
 }
 
 func NewUsecase(ncProducer ncProducer) *Usecase {

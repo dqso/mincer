@@ -14,6 +14,7 @@ func (p *Producer) OnPlayerConnect(id uint64) {
 func (p *Producer) onPlayerConnectBatch() []*api.Message {
 	p.mxOnPlayerConnect.Lock()
 	defer p.mxOnPlayerConnect.Unlock()
+	defer clear(p.onPlayerConnect)
 	batch := make([]*api.Message, 0, len(p.onPlayerConnect))
 	for playerID := range p.onPlayerConnect {
 		msg, err := p.prepareMessage(api.Code_ON_PLAYER_CONNECT, &api.OnPlayerConnect{
@@ -25,6 +26,5 @@ func (p *Producer) onPlayerConnectBatch() []*api.Message {
 		}
 		batch = append(batch, msg)
 	}
-	clear(p.onPlayerConnect)
 	return batch
 }

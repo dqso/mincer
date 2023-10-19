@@ -47,42 +47,103 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		log.Printf("Отсоединился %d", message.PlayerId)
 		m.world.Players().Remove(message.PlayerId)
 
-	case api.Code_ON_PLAYER_CHANGE:
-		var msg api.OnPlayerChange
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			log.Print(err) // TODO logger
-			return
-		}
-		p, ok := m.world.Players().Get(msg.Player.PlayerId)
-		if !ok {
-			p = entity.NewPlayer(msg.Player.PlayerId, msg.Player.X, msg.Player.Y, msg.Player.Hp, msg.Player.Radius, msg.Player.Dead)
-			m.world.Players().Add(p)
-		} else {
-			p.SetPosition(msg.Player.X, msg.Player.Y)
-			p.SetStats(msg.Player.Hp, msg.Player.Radius, msg.Player.Dead)
-		}
-	//log.Printf("Изменился %d: (%0.2f, %0.2f), здоровье %d, радиус %0.2f, умер %v", message.PlayerId, message.X, message.Y, message.Hp, message.Radius, message.Dead)
-
 	case api.Code_PLAYER_LIST:
 		var message api.PlayerList
 		if err := proto.Unmarshal(data, &message); err != nil {
 			log.Print(err) // TODO logger
 			return
 		}
-		for _, player := range message.Players {
-			p, ok := m.world.Players().Get(player.PlayerId)
-			if !ok {
-				p = entity.NewPlayer(player.PlayerId, player.X, player.Y, player.Hp, player.Radius, player.Dead)
-				m.world.Players().Add(p)
-			} else {
-				p.SetPosition(player.X, player.Y)
-				p.SetStats(player.Hp, player.Radius, player.Dead)
-			}
+		for _, p := range message.Players {
+			createOrChangePlayer(m.world.Players(), p)
 		}
+
+	case api.Code_SPAWN_PLAYER:
+		var msg api.SpawnPlayer
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		log.Printf("SpawnPlayer: %v", msg.String())
+		createOrChangePlayer(m.world.Players(), msg.Player)
+	//log.Printf("Изменился %d: (%0.2f, %0.2f), здоровье %d, радиус %0.2f, умер %v", message.PlayerId, message.X, message.Y, message.Hp, message.Radius, message.Dead)
+
+	case api.Code_SET_PLAYER_CLASS:
+		var msg api.SetPlayerClass
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.Players().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetClass(entity.Class(msg.Class))
+
+	case api.Code_SET_PLAYER_HP:
+		var msg api.SetPlayerHP
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.Players().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetHP(msg.Hp)
+
+	case api.Code_SET_PLAYER_RADIUS:
+		var msg api.SetPlayerRadius
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.Players().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetRadius(msg.Radius)
+
+	case api.Code_SET_PLAYER_SPEED:
+		var msg api.SetPlayerSpeed
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.Players().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetSpeed(msg.Speed)
+
+	case api.Code_SET_PLAYER_POSITION:
+		var msg api.SetPlayerPosition
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.Players().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetPosition(msg.X, msg.Y)
 
 	default:
 		log.Printf("unknown message %s", code.String())
 		return
+	}
+}
+
+func createOrChangePlayer(players entity.Players, p *api.Player) {
+	player, ok := players.Get(p.Id)
+	if !ok {
+		player = entity.NewPlayer(p.Id, entity.Class(p.Class), p.Hp, p.Radius, p.Speed, p.X, p.Y)
+		players.Add(player)
+	} else {
+		player.SetClass(entity.Class(p.Class))
+		player.SetHP(p.Hp)
+		player.SetRadius(p.Radius)
+		player.SetSpeed(p.Speed)
+		player.SetPosition(p.X, p.Y)
 	}
 }
 

@@ -33,23 +33,44 @@ func (s *MincerScene) Update(state State) error {
 	}
 	s.input.Update()
 	state.world.Players().Me().SetDirection(s.input.Direction())
-	s.cx, s.cy = s.world.Players().Me().PositionFloat32()
+	s.cx, s.cy = s.world.Players().Me().Position()
 	return nil
 }
 
 func (s *MincerScene) Draw(screen *ebiten.Image) {
 	for _, player := range s.world.Players().GetAll() {
-		s.drawPlayer(screen, player, colornames.Darkblue)
+		s.drawPlayer(screen, player, nil)
 	}
-	s.drawPlayer(screen, s.world.Players().Me(), colornames.Darkgreen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS %0.2f", ebiten.ActualFPS()))
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("(%0.2f, %0.2f)", s.cx, s.cy), 0, 15)
+	if me := s.world.Players().Me(); me != nil {
+		s.drawPlayer(screen, s.world.Players().Me(), entity.ColorBorderMe())
+	}
+	s.drawHUD(screen)
+	//ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS %0.2f", ebiten.ActualFPS()))
+	//ebitenutil.DebugPrintAt(screen, fmt.Sprintf("(%0.2f, %0.2f)", s.cx, s.cy), 0, 15)
 }
 
-func (s *MincerScene) drawPlayer(screen *ebiten.Image, p entity.Player, color color.Color) {
-	x, y := p.PositionFloat32()
+const playerBorderRadius = 1.5
+
+func (s *MincerScene) drawPlayer(screen *ebiten.Image, p entity.Player, border color.Color) {
+	x, y := p.Position()
 	x = x - s.cx + float32(screen.Bounds().Dx())/2
 	y = y - s.cy + float32(screen.Bounds().Dy())/2
-	vector.DrawFilledCircle(screen, x, y, p.RadiusFloat32()+1, colornames.White, true)
-	vector.DrawFilledCircle(screen, x, y, p.RadiusFloat32(), color, true)
+	radius := p.Radius()
+	if border == nil {
+		radius += playerBorderRadius
+	} else {
+		vector.DrawFilledCircle(screen, x, y, radius+playerBorderRadius, border, true)
+	}
+	vector.DrawFilledCircle(screen, x, y, radius, p.Color(), true)
+}
+
+const hudElementWidth = 100.0
+const hudElementHeight = 15.0
+
+func (s *MincerScene) drawHUD(screen *ebiten.Image) {
+	me := s.world.Players().Me()
+	vector.StrokeRect(screen, 5, 5, hudElementWidth, hudElementHeight, 2, colornames.Red, true)
+	hpWidth := hudElementWidth * (1 - 1/float32(me.HP()))
+	vector.DrawFilledRect(screen, 5, 5, hpWidth, hudElementHeight, colornames.Red, true)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("HP: %d", me.HP()), 7, 6)
 }

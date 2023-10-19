@@ -10,20 +10,20 @@ func (uc *Usecase) OnPlayerConnect(connect chan uint64, disconnect chan uint64) 
 			if !ok {
 				return
 			}
-			player, err := uc.world.AddPlayer(id)
+			player, err := uc.world.NewPlayer(id)
 			if err != nil {
 				log.Print(err) // TODO logger
 				continue
 			}
 			uc.ncProducer.OnPlayerConnect(player.ID())
-			uc.ncProducer.DirectPlayerList(id, uc.world.Players().Slice())
-			uc.ncProducer.OnPlayerChange(player)
+			uc.ncProducer.PlayerList(id, uc.world.Players().Slice())
+			uc.ncProducer.SpawnPlayer(player)
 
 		case id, ok := <-disconnect:
 			if !ok {
 				return
 			}
-			uc.world.RemovePlayer(id)
+			uc.world.Players().Remove(id)
 			uc.ncProducer.OnPlayerDisconnect(id)
 		}
 	}

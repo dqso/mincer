@@ -7,8 +7,13 @@ type God interface {
 	Float(min, max float64) float64
 }
 
+type Rand interface {
+	Int() int
+	Float64() float64
+}
+
 type god struct {
-	rand *rand.Rand
+	rand Rand
 }
 
 func NewGod(seed int64) God {
@@ -18,21 +23,18 @@ func NewGod(seed int64) God {
 }
 
 func (g *god) Int(min, max int) int {
-	return min + rand.Int()%(max-min+1)
+	return min + g.rand.Int()%(max-min+1)
 }
 
 func (g *god) Float(min, max float64) float64 {
-	return min + rand.Float64()*(max-min)
+	return min + g.rand.Float64()*(max-min)
 }
 
 const (
 	defaultPlayerHP int64 = 100
 
-	minPlayerRadius float64 = 10.0
-	maxPlayerRadius float64 = 50.0
-
-	minPlayerSpeed float64 = 50.0
-	maxPlayerSpeed float64 = 100.0
+	defaultPlayerRadius float64 = 10.0
+	defaultPlayerSpeed  float64 = 100.0
 
 	MaxNorth float64 = -100.0
 	MaxEast  float64 = 100.0

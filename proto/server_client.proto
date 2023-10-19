@@ -3,16 +3,30 @@ syntax = "proto3";
 option go_package = ";api";
 
 enum Code {
-  UNKNOWN_CODE         = 0;
-  PING                 = 1;
-  PONG                 = 2;
-  BATCH                = 3;
-  ON_PLAYER_CONNECT    = 4;
-  ON_PLAYER_CHANGE     = 5;
-  PLAYER_LIST          = 6;
-  ON_PLAYER_DISCONNECT = 7;
-  QUIT                 = 8;
-  CLIENT_INFO          = 9;
+  UNKNOWN_CODE = 0;
+  BATCH        = 1;
+
+  reserved 2 to 9;
+
+  ON_PLAYER_CONNECT    = 10;
+  ON_PLAYER_DISCONNECT = 11;
+  PLAYER_LIST          = 12;
+
+  reserved 13 to 19;
+
+  // From client
+
+  CLIENT_INFO = 20;
+  QUIT        = 21;
+
+  reserved 22 to 49;
+
+  SPAWN_PLAYER        = 50;
+  SET_PLAYER_CLASS    = 51;
+  SET_PLAYER_HP       = 52;
+  SET_PLAYER_RADIUS   = 53;
+  SET_PLAYER_SPEED    = 54;
+  SET_PLAYER_POSITION = 55;
 }
 
 message Message {
@@ -24,14 +38,6 @@ message Batch {
   repeated Message messages = 1;
 }
 
-message Ping {
-  string ping = 1;
-}
-
-message Pong {
-  string pong = 1;
-}
-
 message OnPlayerConnect {
   uint64 player_id = 1;
 }
@@ -40,26 +46,68 @@ message OnPlayerDisconnect {
   uint64 player_id = 1;
 }
 
-message PublicPlayer {
+message Quit {
   uint64 player_id = 1;
-  double x         = 2;
-  double y         = 3;
-  int64  hp        = 4;
-  double radius    = 5;
-  bool   dead      = 6;
-}
-
-message OnPlayerChange {
-  PublicPlayer player = 1;
 }
 
 message PlayerList {
-  repeated PublicPlayer players = 1;
+  repeated Player players = 1;
 }
-
-message Quit {}
 
 message ClientInfo {
   double direction = 1;
   bool   isMoving  = 2;
+}
+
+enum Class {
+  UNKNOWN_CLASS = 0;
+  WARRIOR       = 1;
+  MAGE          = 2;
+  RANGER        = 3;
+}
+
+message Player {
+  uint64 id    = 1;
+
+  reserved 2 to 9;
+
+  Class  class   = 10;
+  int64  hp      = 11;
+  double radius  = 12;
+  double speed   = 13;
+
+  reserved 14 to 19;
+
+  double x = 20;
+  double y = 21;
+}
+
+message SpawnPlayer {
+  Player player = 1;
+}
+
+message SetPlayerClass {
+  uint64 id    = 1;
+  Class  class = 2;
+}
+
+message SetPlayerHP {
+  uint64 id = 1;
+  int64  hp = 2;
+}
+
+message SetPlayerRadius {
+  uint64 id     = 1;
+  double radius = 2;
+}
+
+message SetPlayerSpeed {
+  uint64 id    = 1;
+  double speed = 2;
+}
+
+message SetPlayerPosition {
+  uint64 id = 1;
+  double x  = 2;
+  double y  = 3;
 }

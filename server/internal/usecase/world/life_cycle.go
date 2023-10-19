@@ -21,20 +21,10 @@ func (uc Usecase) LifeCycle(ctx context.Context) chan struct{} {
 			default:
 			}
 
-			changed := make(map[uint64]struct{})
-
 			for _, player := range uc.world.Players().Slice() {
-				if player.Move(deltaTime) {
-					changed[player.ID()] = struct{}{}
+				if newPos, wasMoved := player.Move(deltaTime); wasMoved {
+					uc.ncProducer.SetPlayerPosition(player.ID(), newPos)
 				}
-			}
-
-			for id := range changed {
-				player, ok := uc.world.Players().Get(id)
-				if !ok {
-					continue
-				}
-				uc.ncProducer.OnPlayerChange(player)
 			}
 
 			sleepTime := deltaTime - time.Since(startPause)
