@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	botPrefixID = uint32(0xFFFFFFFF)
+)
+
 type Me interface {
 	Player
 	GetPlayer() Player
@@ -103,7 +107,7 @@ func NewPlayer(id uint64, hp int64, playerStats PlayerStats, x, y float64) Playe
 	return &player{
 		id:          id,
 		PlayerStats: playerStats,
-		color:       playerStats.Class().color(),
+		color:       playerStats.Class().Color(),
 		hp:          hp,
 		x:           float32(x),
 		y:           float32(y),
@@ -116,7 +120,7 @@ func (p *player) setID(id uint64) { p.id = id }
 
 func (p *player) SetStats(stats PlayerStats) {
 	p.PlayerStats = stats
-	p.color = stats.Class().color()
+	p.color = stats.Class().Color()
 }
 
 func (p *player) Color() color.Color { return p.color }
@@ -136,16 +140,16 @@ const (
 	Ranger  = Class(api.Class_RANGER)
 )
 
-func (c Class) color() color.Color {
+func (c Class) Color() color.NRGBA {
 	switch c {
 	case Warrior:
-		return colornames.Red200
+		return color.NRGBA{0xEF, 0x9A, 0x9A, 0xFF}
 	case Mage:
-		return colornames.Blue200
+		return color.NRGBA{0x90, 0xCA, 0xF9, 0xFF}
 	case Ranger:
-		return colornames.Green200
+		return color.NRGBA{0xA5, 0xD6, 0xA7, 0xFF}
 	default:
-		return colornames.White
+		return color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
 	}
 }
 
@@ -154,7 +158,7 @@ func ColorBorderMe() color.Color {
 }
 
 func ColorDeadPlayer() color.Color {
-	return color.RGBA{R: 0xAA, G: 0xAA, B: 0xAA, A: 0}
+	return color.NRGBA{R: 0xAA, G: 0xAA, B: 0xAA, A: 0xFF}
 }
 
 type Players interface {

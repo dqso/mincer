@@ -13,6 +13,7 @@ type Usecase struct {
 type ncProducer interface {
 	OnPlayerConnect(id uint64)
 	OnPlayerDisconnect(id uint64)
+	OnPlayerWasted(id uint64, killer uint64)
 	PlayerList(toPlayerID uint64, players []entity.Player)
 	SpawnPlayer(player entity.Player)
 	SetPlayerStats(id uint64, stats entity.PlayerStats)

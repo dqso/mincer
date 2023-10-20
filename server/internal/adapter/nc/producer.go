@@ -18,6 +18,9 @@ type Producer struct {
 	mxOnPlayerDisconnect sync.Mutex
 	onPlayerDisconnect   map[uint64]struct{}
 
+	mxOnPlayerWasted sync.Mutex
+	onPlayerWasted   []*api.OnPlayerWasted
+
 	spawnPlayer   map[uint64]entity.Player
 	mxSpawnPlayer sync.Mutex
 

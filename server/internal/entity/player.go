@@ -15,7 +15,7 @@ type Player interface {
 
 	HP() int64
 	IsDead() bool
-	SetHP(hp int64)
+	SetHP(hp int64) (wasChanged bool)
 
 	Position() Point
 	SetPosition(p Point)
@@ -114,7 +114,7 @@ func (p *player) IsDead() bool {
 	return p.HP() <= 0
 }
 
-func (p *player) SetHP(hp int64) {
+func (p *player) SetHP(hp int64) (wasChanged bool) {
 	if hp < 0 {
 		hp = 0
 	}
@@ -124,9 +124,13 @@ func (p *player) SetHP(hp int64) {
 	func() {
 		p.mxHP.Lock()
 		defer p.mxHP.Unlock()
-		p.hp = hp
+		if p.hp != hp {
+			wasChanged = true
+			p.hp = hp
+		}
 	}()
 	p.horn.SetPlayerHP(p.ID(), hp)
+	return
 }
 
 func (p *player) Position() Point {

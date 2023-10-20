@@ -12,26 +12,29 @@ enum Code {
 
   ON_PLAYER_CONNECT    = 10;
   ON_PLAYER_DISCONNECT = 11;
+  ON_PLAYER_WASTED     = 12;
+
+  reserved 13 to 29;
 
   // To one client
 
-  PLAYER_LIST = 12;
+  PLAYER_LIST = 30;
 
-  reserved 13 to 19;
+  reserved 31 to 49;
 
   // From client
 
-  CLIENT_INFO = 20;
-  QUIT        = 21;
+  CLIENT_INFO = 50;
+  QUIT        = 51;
 
-  reserved 22 to 49;
+  reserved 52 to 69;
 
   // To every client
 
-  SPAWN_PLAYER        = 50;
-  SET_PLAYER_STATS    = 51;
-  SET_PLAYER_HP       = 52;
-  SET_PLAYER_POSITION = 53;
+  SPAWN_PLAYER        = 70;
+  SET_PLAYER_STATS    = 71;
+  SET_PLAYER_HP       = 72;
+  SET_PLAYER_POSITION = 73;
 }
 
 message Message {
@@ -49,6 +52,11 @@ message OnPlayerConnect {
 
 message OnPlayerDisconnect {
   uint64 player_id = 1;
+}
+
+message OnPlayerWasted {
+  uint64 id     = 1;
+  uint64 killer = 2;
 }
 
 message Quit {

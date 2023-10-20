@@ -47,6 +47,15 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		log.Printf("Отсоединился %d", message.PlayerId)
 		m.world.Players().Remove(message.PlayerId)
 
+	case api.Code_ON_PLAYER_WASTED:
+		var message api.OnPlayerWasted
+		if err := proto.Unmarshal(data, &message); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		log.Printf("Игрок %d убит игроком %d", message.Id, message.Killer)
+		m.world.AddNewKill(message.Id, message.Killer)
+
 	case api.Code_PLAYER_LIST:
 		var message api.PlayerList
 		if err := proto.Unmarshal(data, &message); err != nil {
