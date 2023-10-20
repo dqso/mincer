@@ -6,16 +6,16 @@ import (
 	"log"
 )
 
-func (p *Producer) SetPlayerStats(id uint64, class entity.Class, radius, speed float64, maxHP int64, maxCoolDown, power float64) {
+func (p *Producer) SetPlayerStats(id uint64, stats entity.PlayerStats) {
 	p.mxPlayerStats.Lock()
 	defer p.mxPlayerStats.Unlock()
 	p.playerStats[id] = &api.PlayerStats{
-		Class:       api.Class(class),
-		Radius:      radius,
-		Speed:       speed,
-		MaxHP:       maxHP,
-		MaxCoolDown: maxCoolDown,
-		Power:       power,
+		Class:       api.Class(stats.Class()),
+		Radius:      stats.Radius(),
+		Speed:       stats.Speed(),
+		MaxHP:       stats.MaxHP(),
+		MaxCoolDown: stats.MaxCoolDown(),
+		Power:       stats.Power(),
 	}
 }
 

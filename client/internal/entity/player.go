@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"sort"
 	"sync"
+	"time"
 )
 
 type Me interface {
@@ -17,6 +18,7 @@ type Me interface {
 	SetDirection(d float64, isMoving bool)
 	Attack() bool
 	SetAttack(v bool)
+	CurrentCoolDown() float32
 }
 
 type me struct {
@@ -24,7 +26,10 @@ type me struct {
 
 	direction float64
 	isMoving  bool
-	attack    bool
+
+	attack        bool
+	isCoolDown    bool
+	coolDownStart time.Time
 }
 
 func newEmptyMe() Me {
@@ -39,7 +44,25 @@ func (m *me) SetID(id uint64)                       { m.Player.setID(id) }
 func (m *me) Direction() (float64, bool)            { return m.direction, m.isMoving }
 func (m *me) SetDirection(d float64, isMoving bool) { m.direction, m.isMoving = d, isMoving }
 func (m *me) Attack() bool                          { return m.attack }
-func (m *me) SetAttack(v bool)                      { m.attack = v }
+
+func (m *me) SetAttack(v bool) {
+	m.attack = v
+	if v && !m.isCoolDown {
+		m.isCoolDown, m.coolDownStart = true, time.Now()
+	}
+}
+
+func (m *me) CurrentCoolDown() float32 {
+	if !m.isCoolDown {
+		return m.MaxCoolDown()
+	}
+	current := float32(time.Since(m.coolDownStart).Seconds())
+	if current >= m.MaxCoolDown() {
+		m.isCoolDown = false
+		return m.MaxCoolDown()
+	}
+	return current
+}
 
 type Player interface {
 	ID() uint64

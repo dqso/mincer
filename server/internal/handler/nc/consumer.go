@@ -61,9 +61,6 @@ func (c *Consumer) listen(ctx context.Context) {
 	if err := c.usecase.AddBot(); err != nil {
 		log.Print(err)
 	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
 
 	for {
 		// TODO startTime := time.Now()

@@ -23,25 +23,25 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 			}
 
 			for _, player := range uc.world.Players().Slice() {
-				if newPos, wasMoved := player.Move(deltaTime, uc.world.SizeRect()); wasMoved {
-					uc.ncProducer.SetPlayerPosition(player.ID(), newPos)
-				}
+				player.Move(deltaTime, uc.world.SizeRect())
 				player.Relax(deltaTime)
 			}
 
 			for _, player := range uc.world.Players().Slice() {
-				if player.Attack() { // TODO add cursor position for mage and ranger
-					log.Print(player.ID(), "attack")
-					p := uc.world.SearchNearby(player.Position(), func(p entity.Player) entity.Player {
+				if player.Attack() /* TODO && player.Class() == entity.ClassWarrior*/ { // TODO add cursor position for mage and ranger
+					aPos := player.Position()
+					rr := entity.DefaultAttackRadius * entity.DefaultAttackRadius
+					uc.world.SearchNearby(player.Position(), func(p entity.Player) bool {
 						if p.ID() == player.ID() {
-							return nil
+							return false
 						}
-						return p
-					}) // TODO ударять всех
-					if p != nil {
-						p.SetHP(p.HP() - int64(p.Power()))
-						uc.ncProducer.SetPlayerHP(p.ID(), p.HP())
-					}
+						pPos := p.Position()
+						// ударять всех в радиусе
+						if x, y := pPos.X-aPos.X, pPos.Y-aPos.Y; x*x+y*y <= rr {
+							p.SetHP(p.HP() - int64(p.Power()))
+						}
+						return false
+					})
 				}
 			}
 

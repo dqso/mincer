@@ -14,10 +14,13 @@ type World interface {
 	Respawn(p Player)
 	SizeRect() Rect
 	Players() PlayerList
-	SearchNearby(point Point, cb func(p Player) Player) Player
+	SearchNearby(point Point, callback func(p Player) (stop bool)) Player
+	Horn() Horn
 }
 
 type world struct {
+	horn Horn
+
 	westNorth  Point
 	eastSouth  Point
 	playerList PlayerList
@@ -28,8 +31,9 @@ type world struct {
 	mxRegions sync.RWMutex
 }
 
-func NewWorld(seed int64, westNorth, eastSouth Point) World {
+func NewWorld(seed int64, westNorth, eastSouth Point, horn Horn) World {
 	w := &world{
+		horn:       horn,
 		westNorth:  westNorth,
 		eastSouth:  eastSouth,
 		playerList: NewPlayerList(),
@@ -42,6 +46,10 @@ func NewWorld(seed int64, westNorth, eastSouth Point) World {
 	go w.supportRegions(context.TODO()) // tODO
 
 	return w
+}
+
+func (w *world) Horn() Horn {
+	return w.horn
 }
 
 func (w *world) Width() float64 {
@@ -67,7 +75,7 @@ func (w *world) NewPlayer(id uint64) (Player, error) {
 	if _, ok := w.playerList.Get(id); ok {
 		return nil, ErrPlayerAlreadyExists
 	}
-	p := NewPlayer(id, w.acquireClass())
+	p := newPlayer(id, w.acquireClass(), w.Horn())
 	p.SetPosition(w.acquirePosition(p.Radius()))
 	w.playerList.Add(p)
 	return p, nil
@@ -81,6 +89,7 @@ func (w *world) NewBot() (Bot, error) {
 }
 
 func (w *world) Respawn(p Player) {
+	p.SetClass(w.acquireClass())
 	p.SetHP(p.MaxHP())
 	p.SetPosition(w.acquirePosition(p.Radius()))
 }
@@ -162,53 +171,56 @@ func (w *world) calculateRegion(p Point) int16 {
 		int16(math.Floor((p.Y+dpy)/deltaY))*nr
 }
 
-func (w *world) SearchNearby(point Point, cb func(p Player) Player) Player {
-	region := w.calculateRegion(point)
-	return w.searchNearby(region, cb, make(map[int16]struct{}))
-}
+// bfs
+func (w *world) SearchNearby(point Point, cb func(p Player) bool) Player {
+	w.mxRegions.RLock()
+	defer w.mxRegions.RUnlock()
 
-func (w *world) searchNearby(region int16, cb func(p Player) Player, seen map[int16]struct{}) Player {
-	if _, ok := seen[region]; ok {
-		return nil
-	}
-	for _, id := range func() []uint64 {
-		w.mxRegions.RLock()
-		defer w.mxRegions.RUnlock()
-		s, ok := w.regions[region]
-		if !ok {
-			return []uint64{}
-		}
-		return slices.Clone(s)
-	}() {
-		p, ok := w.playerList.Get(id)
-		if !ok {
-			continue
-		}
-		if p = cb(p); p != nil {
-			return p
-		}
-	}
-	seen[region] = struct{}{}
+	region := w.calculateRegion(point)
+
+	seen := make(map[int16]struct{})
 	nr2 := nr * nr
-	if region+1 < nr2 { // right
-		if p := w.searchNearby(region+1, cb, seen); p != nil {
-			return p
-		}
+
+	step := map[int16]struct{}{
+		region: {},
 	}
-	if region-1 >= 0 { // left
-		if p := w.searchNearby(region-1, cb, seen); p != nil {
-			return p
+	for len(step) > 0 {
+		nextStep := make(map[int16]struct{})
+		for region := range step {
+			if _, ok := seen[region]; ok {
+				continue
+			}
+			for _, id := range func() []uint64 {
+				s, ok := w.regions[region]
+				if !ok {
+					return []uint64{}
+				}
+				return slices.Clone(s)
+			}() {
+				p, ok := w.playerList.Get(id)
+				if !ok {
+					continue
+				}
+				if cb(p) {
+					return p
+				}
+			}
+			seen[region] = struct{}{}
+			if region+1 < nr2 { // right
+				nextStep[region+1] = struct{}{}
+			}
+			if region-1 >= 0 { // left
+				nextStep[region-1] = struct{}{}
+			}
+			if region+nr < nr2 { // down
+				nextStep[region+nr] = struct{}{}
+			}
+			if region-nr >= 0 { // up
+				nextStep[region-nr] = struct{}{}
+			}
 		}
+		step = nextStep
 	}
-	if region-nr >= 0 { // up
-		if p := w.searchNearby(region-nr, cb, seen); p != nil {
-			return p
-		}
-	}
-	if region+nr < nr2 { // down
-		if p := w.searchNearby(region+nr, cb, seen); p != nil {
-			return p
-		}
-	}
+
 	return nil
 }

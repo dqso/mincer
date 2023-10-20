@@ -15,7 +15,7 @@ type ncProducer interface {
 	OnPlayerDisconnect(id uint64)
 	PlayerList(toPlayerID uint64, players []entity.Player)
 	SpawnPlayer(player entity.Player)
-	SetPlayerStats(id uint64, class entity.Class, radius, speed float64, maxHP int64, maxCoolDown, power float64)
+	SetPlayerStats(id uint64, stats entity.PlayerStats)
 	SetPlayerHP(id uint64, hp int64)
 	SetPlayerPosition(id uint64, position entity.Point)
 }
@@ -26,6 +26,7 @@ func NewUsecase(ncProducer ncProducer) *Usecase {
 		world: entity.NewWorld(time.Now().UnixNano(),
 			entity.Point{X: entity.MaxWest, Y: entity.MaxNorth},
 			entity.Point{X: entity.MaxEast, Y: entity.MaxSouth},
+			ncProducer,
 		),
 	}
 }

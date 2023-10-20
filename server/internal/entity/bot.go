@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"log"
 	"time"
 )
 
@@ -24,7 +23,7 @@ type bot struct {
 
 func newBot(w World, id uint32, class Class) (Bot, func()) {
 	b := &bot{
-		Player: NewPlayer(uint64(botPrefixID)<<32|uint64(id), class),
+		Player: newPlayer(uint64(botPrefixID)<<32|uint64(id), class, w.Horn()),
 		world:  w,
 	}
 	stop := make(chan struct{})
@@ -48,25 +47,25 @@ func (b *bot) life(stop chan struct{}) {
 		//log.Printf("bot %d: New iteration my life", b.BotID())
 
 		if b.IsDead() {
-			log.Printf("bot %d: I'm dead. I'm waiting %s and I'm going to respawn", b.BotID(), botRespawnTime)
+			//log.Printf("bot %d: I'm dead. I'm waiting %s and I'm going to respawn", b.BotID(), botRespawnTime)
 			time.Sleep(botRespawnTime)
 			b.world.Respawn(b.GetPlayer())
 			continue
 		}
 
 		// TODO
-		if b.target == nil {
-			//log.Printf("%d: need target", b.ID())
-			b.target = b.world.SearchNearby(b.Position(), func(p Player) Player {
-				if p.ID() == b.ID() {
-					return nil
-				}
-				return p
-			})
-			if b.target != nil {
-				log.Printf("%d: target has been found: %v", b.ID(), b.target)
+		//if b.target == nil {
+		//log.Printf("%d: need target", b.ID())
+		b.target = b.world.SearchNearby(b.Position(), func(p Player) bool {
+			if p.ID() == b.ID() {
+				return false
 			}
+			return true
+		})
+		if b.target != nil {
+			//log.Printf("bot %d: target has been found: player %v %v", b.BotID(), b.target.ID(), b.target.Class())
 		}
+		//}
 
 		time.Sleep(time.Second)
 	}

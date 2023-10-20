@@ -46,8 +46,6 @@ func (s *MincerScene) Draw(screen *ebiten.Image) {
 		s.drawPlayer(screen, s.world.Players().Me(), entity.ColorBorderMe())
 	}
 	s.drawHUD(screen)
-	//ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS %0.2f", ebiten.ActualFPS()))
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("(%0.2f, %0.2f)", s.cx, s.cy), 0, 15)
 }
 
 const playerBorderRadius = 1.5
@@ -77,12 +75,29 @@ const hudElementHeight = 15.0
 
 func (s *MincerScene) drawHUD(screen *ebiten.Image) {
 	me := s.world.Players().Me()
-	vector.StrokeRect(screen, 5, 5, hudElementWidth, hudElementHeight, 2, colornames.Red, true)
-	hpWidth := hudElementWidth * (float32(me.HP()) / 100.0)
-	// w = 1000
-	// hp = 100 w = 1000 []
-	// hp = 0 w = 0
-	// hp = 50 w = 500
-	vector.DrawFilledRect(screen, 5, 5, hpWidth, hudElementHeight, colornames.Red, true)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("HP: %d", me.HP()), 7, 6)
+	if !me.IsLoaded() {
+		return
+	}
+	var x, y float32 = 5, 5
+
+	{
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("FPS %0.2f", ebiten.ActualFPS()), int(x), int(y))
+		y += hudElementHeight
+	}
+	{
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("(%0.2f, %0.2f)", s.cx, s.cy), int(x), int(y))
+		y += hudElementHeight
+	}
+
+	vector.StrokeRect(screen, x, y, hudElementWidth, hudElementHeight, 2, colornames.Red, true)
+	width := hudElementWidth * (float32(me.HP()) / 100.0)
+	vector.DrawFilledRect(screen, x, y, width, hudElementHeight, colornames.Red, true)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("HP: %d", me.HP()), int(x+2), int(y))
+	y += hudElementHeight + 5
+
+	vector.StrokeRect(screen, x, y, hudElementWidth, hudElementHeight, 2, colornames.Darkcyan, true)
+	current := me.CurrentCoolDown()
+	width = hudElementWidth * (current / me.MaxCoolDown())
+	vector.DrawFilledRect(screen, x, y, width, hudElementHeight, colornames.Darkcyan, true)
+	ebitenutil.DebugPrintAt(screen, "cool down", int(x+2), int(y))
 }

@@ -21,13 +21,15 @@ type Player interface {
 	SetPosition(p Point)
 
 	SetDirection(direction float64, isMoving bool)
-	Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, wasMoved bool)
+	Move(lifeTime time.Duration, mapSize Rect) (wasMoved bool)
 	SetAttack(a bool)
 	Attack() bool
 	Relax(lifeTime time.Duration)
 }
 
 type player struct {
+	horn Horn
+
 	id uint64
 
 	PlayerStats
@@ -46,9 +48,10 @@ type player struct {
 	coolDown float64
 }
 
-func NewPlayer(id uint64, class Class) Player {
+func newPlayer(id uint64, class Class, horn Horn) Player {
 	p := &player{
-		id: id,
+		horn: horn,
+		id:   id,
 		PlayerStats: newPlayerStats(
 			class,
 			defaultPlayerRadius,
@@ -71,6 +74,36 @@ func (p *player) GetStats() PlayerStats {
 	return p.PlayerStats
 }
 
+func (p *player) SetClass(v Class) {
+	p.PlayerStats.SetClass(v)
+	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
+}
+
+func (p *player) SetRadius(v float64) {
+	p.PlayerStats.SetRadius(v)
+	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
+}
+
+func (p *player) SetSpeed(v float64) {
+	p.PlayerStats.SetSpeed(v)
+	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
+}
+
+func (p *player) SetMaxHP(v int64) {
+	p.PlayerStats.SetMaxHP(v)
+	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
+}
+
+func (p *player) SetMaxCoolDown(v float64) {
+	p.PlayerStats.SetMaxCoolDown(v)
+	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
+}
+
+func (p *player) SetPower(v float64) {
+	p.PlayerStats.SetPower(v)
+	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
+}
+
 func (p *player) HP() int64 {
 	p.mxHP.RLock()
 	defer p.mxHP.RUnlock()
@@ -88,9 +121,12 @@ func (p *player) SetHP(hp int64) {
 	if p.MaxHP() < hp {
 		hp = 100
 	}
-	p.mxHP.Lock()
-	defer p.mxHP.Unlock()
-	p.hp = hp
+	func() {
+		p.mxHP.Lock()
+		defer p.mxHP.Unlock()
+		p.hp = hp
+	}()
+	p.horn.SetPlayerHP(p.ID(), hp)
 }
 
 func (p *player) Position() Point {
@@ -100,9 +136,12 @@ func (p *player) Position() Point {
 }
 
 func (p *player) SetPosition(point Point) {
-	p.mxPosition.Lock()
-	defer p.mxPosition.Unlock()
-	p.x, p.y = point.X, point.Y
+	func() {
+		p.mxPosition.Lock()
+		defer p.mxPosition.Unlock()
+		p.x, p.y = point.X, point.Y
+	}()
+	p.horn.SetPlayerPosition(p.ID(), Point{p.x, p.y})
 }
 
 func (p *player) SetDirection(direction float64, isMoving bool) {
@@ -111,24 +150,34 @@ func (p *player) SetDirection(direction float64, isMoving bool) {
 	p.direction, p.isMoving = direction, isMoving
 }
 
-func (p *player) Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, wasMoved bool) {
+func (p *player) Move(lifeTime time.Duration, mapSize Rect) (wasMoved bool) {
 	if p.IsDead() {
-		return Point{X: p.x, Y: p.y}, false
+		wasMoved = false
+		return
 	}
-	p.mxPosition.Lock()
-	defer p.mxPosition.Unlock()
-	if !p.isMoving {
-		return Point{X: p.x, Y: p.y}, false
+	func() {
+		p.mxPosition.Lock()
+		defer p.mxPosition.Unlock()
+		if !p.isMoving {
+			wasMoved = false
+			return
+		}
+		sin, cos := math.Sincos(p.direction * math.Pi / 180)
+		x := p.x + p.Speed()*lifeTime.Seconds()*sin
+		y := p.y - p.Speed()*lifeTime.Seconds()*cos
+		if x < mapSize.LeftUp.X || mapSize.RightDown.X < x ||
+			y < mapSize.LeftUp.Y || mapSize.RightDown.Y < y {
+			wasMoved = false
+			return
+		}
+		p.x, p.y = x, y
+		wasMoved = true
+		return
+	}()
+	if wasMoved {
+		p.horn.SetPlayerPosition(p.ID(), Point{X: p.x, Y: p.y})
 	}
-	sin, cos := math.Sincos(p.direction * math.Pi / 180)
-	x := p.x + p.Speed()*lifeTime.Seconds()*sin
-	y := p.y - p.Speed()*lifeTime.Seconds()*cos
-	if x < mapSize.LeftUp.X || mapSize.RightDown.X < x ||
-		y < mapSize.LeftUp.Y || mapSize.RightDown.Y < y {
-		return Point{X: p.x, Y: p.y}, false
-	}
-	p.x, p.y = x, y
-	return Point{X: p.x, Y: p.y}, true
+	return wasMoved
 }
 
 func (p *player) SetAttack(a bool) {
@@ -158,7 +207,7 @@ func (p *player) Attack() (isAllowed bool) {
 func (p *player) Relax(lifeTime time.Duration) {
 	p.mxAttack.Lock()
 	defer p.mxAttack.Unlock()
-	p.coolDown += p.MaxCoolDown() * lifeTime.Seconds()
+	p.coolDown += lifeTime.Seconds()
 }
 
 type Class int32
