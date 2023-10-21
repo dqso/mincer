@@ -34,7 +34,7 @@ func NewWorld(world entity.World) *World {
 		int(w.width),
 		int(w.height),
 	)
-	w.img.Fill(colornames.GreenA400)
+	w.img.Fill(color.NRGBA{R: 0x5A, G: 0x99, B: 0x67, A: 0xFF})
 	for i := float64(0); i < w.width; i += 100.0 {
 		text.Draw(w.img, fmt.Sprintf("%0.f", i), fonts.Normal, int(i), 20, colornames.Black)
 	}

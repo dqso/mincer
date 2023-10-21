@@ -18,7 +18,8 @@ type Player interface {
 
 	HP() int32
 	IsDead() bool
-	SetHP(hp int32) (wasChanged bool)
+	SetHP(hp int32) (newHP int32, wasChanged bool)
+	DealDamage(killerID uint64, damage Damage)
 
 	Position() Point
 	SetPosition(p Point)
@@ -126,7 +127,7 @@ func (p *player) IsDead() bool {
 	return p.HP() <= 0
 }
 
-func (p *player) SetHP(hp int32) (wasChanged bool) {
+func (p *player) SetHP(hp int32) (_ int32, wasChanged bool) {
 	if hp < 0 {
 		hp = 0
 	}
@@ -141,8 +142,17 @@ func (p *player) SetHP(hp int32) (wasChanged bool) {
 			p.hp = hp
 		}
 	}()
-	p.horn.SetPlayerHP(p.ID(), hp)
-	return
+	if wasChanged {
+		p.horn.SetPlayerHP(p.ID(), hp)
+	}
+	return hp, wasChanged
+}
+
+func (p *player) DealDamage(killerID uint64, damage Damage) {
+	newHP, wasChanged := p.SetHP(p.HP() - damage.Physical() - damage.Magical())
+	if wasChanged && newHP == 0 {
+		p.horn.OnPlayerWasted(p.ID(), killerID)
+	}
 }
 
 func (p *player) Position() Point {
@@ -247,8 +257,8 @@ const (
 
 func Classes() []Class {
 	return []Class{
-		ClassWarrior,
-		ClassMage,
-		//ClassRanger,
+		//ClassWarrior,
+		//ClassMage,
+		ClassRanger,
 	}
 }

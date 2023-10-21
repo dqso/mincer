@@ -1,6 +1,7 @@
 package entity
 
 type Horn interface {
+	OnPlayerWasted(id uint64, killer uint64)
 	SpawnPlayer(player Player)
 	SetPlayerStats(id uint64, stats PlayerStats)
 	SetPlayerHP(id uint64, hp int32)

@@ -17,8 +17,7 @@ type Projectile interface {
 	ID() uint64
 	Color() color.NRGBA
 	Position() Point
-	PhysicalDamage() int32
-	MagicalDamage() int32
+	Damage() Damage
 	AttackRadius() float64
 	Radius() float64
 	Speed() float64
@@ -41,28 +40,26 @@ type projectile struct {
 	distance   float64
 	mxPosition sync.RWMutex
 
-	direction      float64
-	radius         float64
-	speed          float64
-	physicalDamage int32
-	magicalDamage  int32
-	attackRadius   float64
-	owner          uint64
+	direction    float64
+	radius       float64
+	speed        float64
+	damage       Damage
+	attackRadius float64
+	owner        uint64
 }
 
 func newProjectile(id uint64, owner Player, weapon Weapon, attackDirection float64) *projectile {
 	return &projectile{
-		id:             id,
-		horn:           owner.getHorn(),
-		position:       owner.Position(),
-		distance:       maxDistanceProjectile,
-		radius:         defaultProjectileRadius,
-		speed:          defaultProjectileSpeed,
-		direction:      attackDirection,
-		physicalDamage: weapon.PhysicalDamage(),
-		magicalDamage:  weapon.MagicalDamage(),
-		attackRadius:   weapon.AttackRadius(),
-		owner:          owner.ID(),
+		id:           id,
+		horn:         owner.getHorn(),
+		position:     owner.Position(),
+		distance:     maxDistanceProjectile,
+		radius:       defaultProjectileRadius,
+		speed:        defaultProjectileSpeed,
+		direction:    attackDirection,
+		damage:       weapon.Damage(),
+		attackRadius: weapon.AttackRadius(),
+		owner:        owner.ID(),
 	}
 }
 
@@ -82,8 +79,7 @@ func (p *projectile) ID() uint64            { return p.id }
 func (p *projectile) Radius() float64       { return p.radius }
 func (p *projectile) Speed() float64        { return p.speed }
 func (p *projectile) Direction() float64    { return p.direction }
-func (p *projectile) PhysicalDamage() int32 { return p.physicalDamage }
-func (p *projectile) MagicalDamage() int32  { return p.magicalDamage }
+func (p *projectile) Damage() Damage        { return p.damage }
 func (p *projectile) AttackRadius() float64 { return p.attackRadius }
 func (p *projectile) Owner() uint64         { return p.owner }
 
@@ -92,12 +88,30 @@ type fireball struct {
 }
 
 func newFireball(id uint64, owner Player, weapon Weapon, attackDirection float64) *fireball {
-	return &fireball{
+	p := &fireball{
 		projectile: newProjectile(id, owner, weapon, attackDirection),
 	}
+	p.projectile.radius = 4.0
+	p.projectile.speed = 200.0
+	return p
 }
 
 func (p *fireball) Color() color.NRGBA { return color.NRGBA{R: 0xFF, G: 0x00, B: 0x00, A: 0xFF} }
+
+type arrowProjectile struct {
+	*projectile
+}
+
+func newArrow(id uint64, owner Player, weapon Weapon, attackDirection float64) *arrowProjectile {
+	p := &arrowProjectile{
+		projectile: newProjectile(id, owner, weapon, attackDirection),
+	}
+	p.projectile.radius = 3.0
+	p.projectile.speed = 200.0
+	return p
+}
+
+func (p *arrowProjectile) Color() color.NRGBA { return color.NRGBA{R: 0x45, G: 0x45, B: 0x45, A: 0xFF} }
 
 func (p *projectile) Move(lifeTime time.Duration, mapSize Rect) (newPosition Point, outOfRange bool) {
 	wasMoved := false

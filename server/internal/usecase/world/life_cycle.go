@@ -31,10 +31,14 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 				middlePosition := oldPosition.Middle(newPosition)
 				victim := projectile.CollisionAnalysis(middlePosition, players)
 				if victim != nil {
-					uc.dealDamageInRadius(
-						middlePosition, projectile.Owner(),
-						projectile.AttackRadius(), projectile.PhysicalDamage(), projectile.MagicalDamage(),
-					)
+					if projectile.AttackRadius() <= 1e-3 {
+						victim.DealDamage(projectile.Owner(), projectile.Damage())
+					} else {
+						uc.dealDamageInRadius(
+							middlePosition, projectile.Owner(),
+							projectile.AttackRadius(), projectile.Damage(),
+						)
+					}
 				}
 				if outOfRange || victim != nil {
 					uc.world.ProjectileList().Remove(projectile.ID())
@@ -53,7 +57,7 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 						weapon := player.Weapon()
 						uc.dealDamageInRadius(
 							player.Position(), player.ID(),
-							weapon.AttackRadius(), weapon.PhysicalDamage(), weapon.MagicalDamage(),
+							weapon.AttackRadius(), weapon.Damage(),
 						)
 					} else if projectile != nil {
 						uc.world.ProjectileList().Add(projectile)
@@ -75,7 +79,7 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 	return stopped
 }
 
-func (uc *Usecase) dealDamageInRadius(position entity.Point, attacker uint64, radius float64, physicalDmg, magicalDmg int32) {
+func (uc *Usecase) dealDamageInRadius(position entity.Point, attacker uint64, radius float64, damage entity.Damage) {
 	uc.world.SearchNearby(position, func(p entity.Player) bool {
 		if p.ID() == attacker {
 			return false
@@ -85,10 +89,7 @@ func (uc *Usecase) dealDamageInRadius(position entity.Point, attacker uint64, ra
 		rr = rr * rr
 		// ударять всех в радиусе
 		if x, y := pPos.X-position.X, pPos.Y-position.Y; x*x+y*y <= rr {
-			wasChanged := p.SetHP(p.HP() - physicalDmg - magicalDmg)
-			if p.HP() == 0 && wasChanged {
-				uc.ncProducer.OnPlayerWasted(p.ID(), attacker)
-			}
+			p.DealDamage(attacker, damage)
 		}
 		return false
 	})

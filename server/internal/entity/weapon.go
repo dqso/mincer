@@ -2,8 +2,7 @@ package entity
 
 type Weapon interface {
 	Name() string
-	PhysicalDamage() int32
-	MagicalDamage() int32
+	Damage() Damage
 	AttackRadius() float64
 	CoolDown() float64
 
@@ -22,6 +21,10 @@ func Weapons(class Class) []func() Weapon {
 		return []func() Weapon{
 			newWand,
 		}
+	case ClassRanger:
+		return []func() Weapon{
+			newBow,
+		}
 	default:
 		return []func() Weapon{
 			newNoWeapon,
@@ -29,13 +32,27 @@ func Weapons(class Class) []func() Weapon {
 	}
 }
 
-type noWeapon struct{}
+type weapon struct {
+	damage Damage
+}
 
-func newNoWeapon() Weapon { return &noWeapon{} }
+func (w *weapon) Damage() Damage {
+	return w.damage
+}
+
+type noWeapon struct {
+	weapon
+}
+
+func newNoWeapon() Weapon {
+	return &noWeapon{
+		weapon: weapon{
+			damage: newDamage(0, 0),
+		},
+	}
+}
 
 func (noWeapon) Name() string          { return "No weapon" }
-func (noWeapon) PhysicalDamage() int32 { return 0 }
-func (noWeapon) MagicalDamage() int32  { return 0 }
 func (noWeapon) AttackRadius() float64 { return 0.0 }
 func (noWeapon) CoolDown() float64     { return 100.0 }
 
@@ -43,62 +60,92 @@ func (noWeapon) Attack(Player, float64, projectileAcquirer) (Projectile, bool) {
 	return nil, true
 }
 
-type warriorWeapon struct{}
-
-func (w *warriorWeapon) MagicalDamage() int32 { return 0 }
-
-func (w *warriorWeapon) Attack(Player, float64, projectileAcquirer) (proj Projectile, isMelee bool) {
-	return nil, true
-}
-
 type swordWeapon struct {
-	warriorWeapon
+	weapon
 }
 
-func newSword() Weapon { return &swordWeapon{} }
+func newSword() Weapon {
+	w := &swordWeapon{}
+	w.damage = newDamage(13, 0)
+	return w
+}
 
 func (w *swordWeapon) Name() string          { return "Sword" }
-func (w *swordWeapon) PhysicalDamage() int32 { return 13 }
 func (w *swordWeapon) AttackRadius() float64 { return 15.0 }
 func (w *swordWeapon) CoolDown() float64     { return 0.5 }
 
-type axeWeapon struct {
-	warriorWeapon
+func (w *swordWeapon) Attack(Player, float64, projectileAcquirer) (proj Projectile, isMelee bool) {
+	return nil, true
 }
 
-func newAxe() Weapon { return &axeWeapon{} }
+type axeWeapon struct {
+	weapon
+}
+
+func newAxe() Weapon {
+	w := &axeWeapon{}
+	w.damage = newDamage(28, 0)
+	return w
+}
 
 func (w *axeWeapon) Name() string          { return "Axe" }
-func (w *axeWeapon) PhysicalDamage() int32 { return 28 }
 func (w *axeWeapon) AttackRadius() float64 { return 20.0 }
 func (w *axeWeapon) CoolDown() float64     { return 1.2 }
 
-type hammerWeapon struct {
-	warriorWeapon
+func (w *axeWeapon) Attack(Player, float64, projectileAcquirer) (proj Projectile, isMelee bool) {
+	return nil, true
 }
 
-func newHammer() Weapon { return &hammerWeapon{} }
+type hammerWeapon struct {
+	weapon
+}
+
+func newHammer() Weapon {
+	w := &hammerWeapon{}
+	w.damage = newDamage(36, 0)
+	return w
+}
 
 func (w *hammerWeapon) Name() string          { return "Hammer" }
-func (w *hammerWeapon) PhysicalDamage() int32 { return 36 }
 func (w *hammerWeapon) AttackRadius() float64 { return 20.0 }
 func (w *hammerWeapon) CoolDown() float64     { return 1.5 }
 
-type magicalWeapon struct{}
-
-func (w *magicalWeapon) PhysicalDamage() int32 { return 0 }
-
-type wandWeapon struct {
-	magicalWeapon
+func (w *hammerWeapon) Attack(Player, float64, projectileAcquirer) (proj Projectile, isMelee bool) {
+	return nil, true
 }
 
-func newWand() Weapon { return &wandWeapon{} }
+type wandWeapon struct {
+	weapon
+}
+
+func newWand() Weapon {
+	w := &wandWeapon{}
+	w.damage = newDamage(0, 21)
+	return w
+}
 
 func (w *wandWeapon) Name() string          { return "Wand \"Fireball\"" }
-func (w *wandWeapon) MagicalDamage() int32  { return 21 }
 func (w *wandWeapon) AttackRadius() float64 { return 40.0 }
 func (w *wandWeapon) CoolDown() float64     { return 3.0 }
 
 func (w *wandWeapon) Attack(owner Player, attackDirection float64, acquirer projectileAcquirer) (proj Projectile, isMelee bool) {
 	return newFireball(acquirer.AcquireProjectileID(), owner, w, attackDirection), false
+}
+
+type bowWeapon struct {
+	weapon
+}
+
+func newBow() Weapon {
+	w := &bowWeapon{}
+	w.damage = newDamage(26, 0)
+	return w
+}
+
+func (w *bowWeapon) Name() string          { return "Bow" }
+func (w *bowWeapon) AttackRadius() float64 { return 0.0 }
+func (w *bowWeapon) CoolDown() float64     { return 1.8 }
+
+func (w *bowWeapon) Attack(owner Player, attackDirection float64, acquirer projectileAcquirer) (proj Projectile, isMelee bool) {
+	return newArrow(acquirer.AcquireProjectileID(), owner, w, attackDirection), false
 }

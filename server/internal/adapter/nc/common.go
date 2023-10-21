@@ -35,8 +35,8 @@ func dtoPlayerStats(stats entity.PlayerStats) *api.PlayerStats {
 func dtoWeapon(weapon entity.Weapon) *api.Weapon {
 	return &api.Weapon{
 		Name:           weapon.Name(),
-		PhysicalDamage: weapon.PhysicalDamage(),
-		MagicalDamage:  weapon.MagicalDamage(),
+		PhysicalDamage: weapon.Damage().Physical(),
+		MagicalDamage:  weapon.Damage().Magical(),
 		CoolDown:       weapon.CoolDown(),
 	}
 }
