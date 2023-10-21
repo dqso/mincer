@@ -19,13 +19,14 @@ type Projectile interface {
 	Position() Point
 	PhysicalDamage() int32
 	MagicalDamage() int32
+	AttackRadius() float64
 	Radius() float64
 	Speed() float64
 	Direction() float64
 	Distance() float64
 	Owner() uint64
 	Move(lifeTime time.Duration, masSize Rect) (newPosition Point, outOfRange bool)
-	CollisionAnalysis(from, to Point, players []Player) Player
+	CollisionAnalysis(position Point, players []Player) Player
 }
 
 type projectileAcquirer interface {
@@ -45,6 +46,7 @@ type projectile struct {
 	speed          float64
 	physicalDamage int32
 	magicalDamage  int32
+	attackRadius   float64
 	owner          uint64
 }
 
@@ -59,6 +61,7 @@ func newProjectile(id uint64, owner Player, weapon Weapon, attackDirection float
 		direction:      attackDirection,
 		physicalDamage: weapon.PhysicalDamage(),
 		magicalDamage:  weapon.MagicalDamage(),
+		attackRadius:   weapon.AttackRadius(),
 		owner:          owner.ID(),
 	}
 }
@@ -81,6 +84,7 @@ func (p *projectile) Speed() float64        { return p.speed }
 func (p *projectile) Direction() float64    { return p.direction }
 func (p *projectile) PhysicalDamage() int32 { return p.physicalDamage }
 func (p *projectile) MagicalDamage() int32  { return p.magicalDamage }
+func (p *projectile) AttackRadius() float64 { return p.attackRadius }
 func (p *projectile) Owner() uint64         { return p.owner }
 
 type fireball struct {
@@ -120,14 +124,13 @@ func (p *projectile) Move(lifeTime time.Duration, mapSize Rect) (newPosition Poi
 
 }
 
-func (p *projectile) CollisionAnalysis(from, to Point, players []Player) Player {
-	m := from.Middle(to)
+func (p *projectile) CollisionAnalysis(position Point, players []Player) Player {
 	for _, player := range players {
 		if player.ID() == p.owner {
 			continue
 		}
 		playerPos := player.Position()
-		distance := math.Hypot(playerPos.X-m.X, playerPos.Y-m.Y)
+		distance := math.Hypot(playerPos.X-position.X, playerPos.Y-position.Y)
 		if distance-p.Radius() <= player.Radius() {
 			return player
 		}
