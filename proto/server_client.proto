@@ -96,7 +96,17 @@ message PlayerStats {
   Class  class  = 1;
   double radius = 2;
   double speed  = 3;
-  int64  maxHP  = 4;
+  int32  maxHP  = 4;
+}
+
+message Weapon {
+  string name = 1;
+
+  reserved 2 to 9;
+
+  int32  physical_damage = 10;
+  int32  magical_damage  = 11;
+  double cool_down       = 12;
 }
 
 message Player {
@@ -104,11 +114,12 @@ message Player {
 
   reserved 2 to 9;
 
-  PlayerStats stats = 10;
+  PlayerStats stats  = 10;
+  Weapon      weapon = 11;
 
-  reserved 11 to 19;
+  reserved 12 to 19;
 
-  int64  hp = 20;
+  int32  hp = 20;
   double x  = 21;
   double y  = 22;
 }
@@ -124,7 +135,7 @@ message SetPlayerStats {
 
 message SetPlayerHP {
   uint64 id = 1;
-  int64  hp = 2;
+  int32  hp = 2;
 }
 
 message SetPlayerPosition {

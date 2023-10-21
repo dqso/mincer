@@ -13,11 +13,12 @@ func (p *Producer) SendPayloadToClient(clientId uint64, payloadData []byte) erro
 func dtoPlayerToApiPlayer(player entity.Player) *api.Player {
 	p := player.Position()
 	return &api.Player{
-		Id:    player.ID(),
-		Stats: dtoPlayerStats(player.GetStats()),
-		Hp:    player.HP(),
-		X:     p.X,
-		Y:     p.Y,
+		Id:     player.ID(),
+		Stats:  dtoPlayerStats(player.GetStats()),
+		Weapon: dtoWeapon(player.Weapon()),
+		Hp:     player.HP(),
+		X:      p.X,
+		Y:      p.Y,
 	}
 }
 
@@ -27,6 +28,15 @@ func dtoPlayerStats(stats entity.PlayerStats) *api.PlayerStats {
 		Radius: stats.Radius(),
 		Speed:  stats.Speed(),
 		MaxHP:  stats.MaxHP(),
+	}
+}
+
+func dtoWeapon(weapon entity.Weapon) *api.Weapon {
+	return &api.Weapon{
+		Name:           weapon.Name(),
+		PhysicalDamage: weapon.PhysicalDamage(),
+		MagicalDamage:  weapon.MagicalDamage(),
+		CoolDown:       weapon.CoolDown(),
 	}
 }
 

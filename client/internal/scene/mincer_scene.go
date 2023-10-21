@@ -56,10 +56,17 @@ func (s *MincerScene) Draw(screen *ebiten.Image) {
 		s.render.Draw(screen)
 	}
 
-	hud.DrawStats(screen, s.world.Players().Me())
+	me := s.world.Players().Me()
+
+	if me.IsLoaded() {
+		hud.DrawStats(screen, me)
+		hud.DrawClassAndWeapon(screen, me.Class(), me.Weapon())
+	}
 
 	hud.DrawFPS(screen)
-	hud.DrawPosition(screen, s.world.Players().Me())
+	if me.IsLoaded() {
+		hud.DrawPosition(screen, me)
+	}
 
 	var y float32 = 0.0
 	for _, message := range s.killMessages {

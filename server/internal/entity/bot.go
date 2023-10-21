@@ -55,6 +55,7 @@ func (b *bot) life(stop chan struct{}) {
 			//log.Printf("bot %d: I'm dead. I'm waiting %s and I'm going to respawn", b.BotID(), botRespawnTime)
 			time.Sleep(botRespawnTime)
 			b.world.Respawn(b.GetPlayer())
+			b.target = nil
 			continue
 		}
 
@@ -82,7 +83,7 @@ func (b *bot) life(stop chan struct{}) {
 			var behavior botBehavior
 			distance := b.Position().Distance(b.target.Position()) - b.target.Radius()
 			if class := b.Class(); class == ClassWarrior {
-				if distance > DefaultAttackRadius {
+				if distance > b.Weapon().AttackRadius()*0.97 {
 					behavior = runToTarget
 					// бежать до него
 				} else {

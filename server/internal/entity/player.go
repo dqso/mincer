@@ -15,9 +15,9 @@ type Player interface {
 
 	Weapon() Weapon
 
-	HP() int64
+	HP() int32
 	IsDead() bool
-	SetHP(hp int64) (wasChanged bool)
+	SetHP(hp int32) (wasChanged bool)
 
 	Position() Point
 	SetPosition(p Point)
@@ -39,7 +39,7 @@ type player struct {
 	weapon Weapon
 
 	mxHP sync.RWMutex
-	hp   int64
+	hp   int32
 
 	mxPosition sync.RWMutex
 	x, y       float64
@@ -96,12 +96,12 @@ func (p *player) SetSpeed(v float64) {
 	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
 }
 
-func (p *player) SetMaxHP(v int64) {
+func (p *player) SetMaxHP(v int32) {
 	p.PlayerStats.SetMaxHP(v)
 	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
 }
 
-func (p *player) HP() int64 {
+func (p *player) HP() int32 {
 	p.mxHP.RLock()
 	defer p.mxHP.RUnlock()
 	return p.hp
@@ -111,7 +111,7 @@ func (p *player) IsDead() bool {
 	return p.HP() <= 0
 }
 
-func (p *player) SetHP(hp int64) (wasChanged bool) {
+func (p *player) SetHP(hp int32) (wasChanged bool) {
 	if hp < 0 {
 		hp = 0
 	}
@@ -222,7 +222,7 @@ const (
 func Classes() []Class {
 	return []Class{
 		ClassWarrior,
-		ClassMage,
+		//ClassMage,
 		//ClassRanger,
 	}
 }

@@ -15,7 +15,7 @@ type Me interface {
 	SetDirection(d float64, isMoving bool)
 	Attack() bool
 	SetAttack(v bool)
-	CurrentCoolDown() float32
+	CurrentCoolDown() float64
 }
 
 type me struct {
@@ -44,20 +44,24 @@ func (m *me) SetDirection(d float64, isMoving bool) { m.direction, m.isMoving = 
 func (m *me) Attack() bool                          { return m.attack }
 
 func (m *me) SetAttack(v bool) {
+	if m.HP() == 0 {
+		return
+	}
 	m.attack = v
 	if v && !m.isCoolDown {
 		m.isCoolDown, m.coolDownStart = true, time.Now()
 	}
 }
 
-func (m *me) CurrentCoolDown() float32 {
+func (m *me) CurrentCoolDown() float64 {
+	maxCoolDown := m.Weapon().CoolDown()
 	if !m.isCoolDown {
-		return 1000 // TODO from weapon m.MaxCoolDown()
+		return maxCoolDown
 	}
-	current := float32(time.Since(m.coolDownStart).Seconds())
-	if current >= 1000 /*TODO from weapon m.MaxCoolDown()*/ {
+	current := time.Since(m.coolDownStart).Seconds()
+	if current >= maxCoolDown {
 		m.isCoolDown = false
-		return 1000 // TODO from weapon m.MaxCoolDown()
+		return maxCoolDown
 	}
 	return current
 }

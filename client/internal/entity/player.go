@@ -20,10 +20,13 @@ type Player interface {
 	PlayerStats
 	SetStats(stats PlayerStats)
 
+	Weapon() Weapon
+	SetWeapon(weapon Weapon)
+
 	Color() color.Color
 
-	HP() int64
-	SetHP(hp int64)
+	HP() int32
+	SetHP(hp int32)
 	IsDead() bool
 
 	Position() Point
@@ -35,9 +38,11 @@ type player struct {
 
 	PlayerStats
 
+	weapon Weapon
+
 	color color.Color
 
-	hp       int64
+	hp       int32
 	position Point
 }
 
@@ -47,10 +52,11 @@ func newEmptyPlayer() Player {
 	}
 }
 
-func NewPlayer(id uint64, hp int64, playerStats PlayerStats, position Point) Player {
+func NewPlayer(id uint64, hp int32, playerStats PlayerStats, weapon Weapon, position Point) Player {
 	return &player{
 		id:          id,
 		PlayerStats: playerStats,
+		weapon:      weapon,
 		color:       playerStats.Class().Color(),
 		hp:          hp,
 		position:    position,
@@ -66,10 +72,13 @@ func (p *player) SetStats(stats PlayerStats) {
 	p.color = stats.Class().Color()
 }
 
+func (p *player) Weapon() Weapon     { return p.weapon }
+func (p *player) SetWeapon(w Weapon) { p.weapon = w }
+
 func (p *player) Color() color.Color { return p.color }
 
-func (p *player) HP() int64      { return p.hp }
-func (p *player) SetHP(hp int64) { p.hp = hp }
+func (p *player) HP() int32      { return p.hp }
+func (p *player) SetHP(hp int32) { p.hp = hp }
 func (p *player) IsDead() bool   { return p.hp <= 0 }
 
 func (p *player) Position() Point         { return p.position }
@@ -83,14 +92,27 @@ const (
 	Ranger  = Class(api.Class_RANGER)
 )
 
+func (c Class) Name() string {
+	switch c {
+	case Warrior:
+		return "Warrior"
+	case Mage:
+		return "Mage"
+	case Ranger:
+		return "Ranger"
+	default:
+		return "No class"
+	}
+}
+
 func (c Class) Color() color.NRGBA {
 	switch c {
 	case Warrior:
-		return color.NRGBA{0xEF, 0x9A, 0x9A, 0xFF}
+		return color.NRGBA{0xFF, 0x64, 0x64, 0xFF}
 	case Mage:
-		return color.NRGBA{0x90, 0xCA, 0xF9, 0xFF}
+		return color.NRGBA{0x4A, 0xBB, 0xFF, 0xFF}
 	case Ranger:
-		return color.NRGBA{0xA5, 0xD6, 0xA7, 0xFF}
+		return color.NRGBA{0x5D, 0xDD, 0x5D, 0xFF}
 	default:
 		return color.NRGBA{0xFF, 0xFF, 0xFF, 0xFF}
 	}

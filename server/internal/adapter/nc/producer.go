@@ -28,7 +28,7 @@ type Producer struct {
 	playerStats   map[uint64]*api.PlayerStats
 
 	mxPlayerHP sync.Mutex
-	playerHP   map[uint64]int64
+	playerHP   map[uint64]int32
 
 	mxPlayerPositions sync.Mutex
 	playerPositions   map[uint64]entity.Point
@@ -47,7 +47,7 @@ func NewProducer(config config, server *netcode.Server) *Producer {
 		onPlayerDisconnect: make(map[uint64]struct{}),
 		spawnPlayer:        make(map[uint64]entity.Player),
 		playerStats:        make(map[uint64]*api.PlayerStats),
-		playerHP:           make(map[uint64]int64),
+		playerHP:           make(map[uint64]int32),
 		playerPositions:    make(map[uint64]entity.Point),
 	}
 }

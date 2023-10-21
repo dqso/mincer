@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (p *Producer) SetPlayerHP(id uint64, hp int64) {
+func (p *Producer) SetPlayerHP(id uint64, hp int32) {
 	p.mxPlayerHP.Lock()
 	defer p.mxPlayerHP.Unlock()
 	p.playerHP[id] = hp

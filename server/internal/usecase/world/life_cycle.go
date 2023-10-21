@@ -30,18 +30,21 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 			for _, player := range uc.world.Players().Slice() {
 				if player.Attack() /* TODO && player.Class() == entity.ClassWarrior*/ { // TODO add cursor position for mage and ranger
 					aPos := player.Position()
-					rr := entity.DefaultAttackRadius * entity.DefaultAttackRadius
 					uc.world.SearchNearby(player.Position(), func(p entity.Player) bool {
 						if p.ID() == player.ID() {
 							return false
 						}
 						pPos := p.Position()
+						rr := player.Weapon().AttackRadius() + p.Radius() // учитывать радиус врага, а не только его центр тела
+						rr = rr * rr
 						// ударять всех в радиусе
 						if x, y := pPos.X-aPos.X, pPos.Y-aPos.Y; x*x+y*y <= rr {
-							wasChanged := p.SetHP(p.HP() - int64(p.Weapon().PhysicalDamage())) // TODO and magical damage
+							wasChanged := p.SetHP(p.HP() - p.Weapon().PhysicalDamage()) // TODO and magical damage
 							if p.HP() == 0 && wasChanged {
 								uc.ncProducer.OnPlayerWasted(p.ID(), player.ID())
 							}
+						} else {
+							log.Print("не дотягивается", x*x+y*y, rr)
 						}
 						return false
 					})

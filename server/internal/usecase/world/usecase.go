@@ -18,7 +18,7 @@ type ncProducer interface {
 	PlayerList(toPlayerID uint64, players []entity.Player)
 	SpawnPlayer(player entity.Player)
 	SetPlayerStats(id uint64, stats entity.PlayerStats)
-	SetPlayerHP(id uint64, hp int64)
+	SetPlayerHP(id uint64, hp int32)
 	SetPlayerPosition(id uint64, position entity.Point)
 }
 

@@ -12,8 +12,8 @@ type PlayerStats interface {
 	Speed() float64
 	SetSpeed(v float64)
 
-	MaxHP() int64
-	SetMaxHP(v int64)
+	MaxHP() int32
+	SetMaxHP(v int32)
 }
 
 type playerStats struct {
@@ -22,10 +22,10 @@ type playerStats struct {
 	class  Class
 	radius float64
 	speed  float64
-	maxHP  int64
+	maxHP  int32
 }
 
-func newPlayerStats(class Class, radius, speed float64, maxHP int64) PlayerStats {
+func newPlayerStats(class Class, radius, speed float64, maxHP int32) PlayerStats {
 	return &playerStats{
 		class:  class,
 		radius: radius,
@@ -70,13 +70,13 @@ func (s *playerStats) SetSpeed(v float64) {
 	s.speed = v
 }
 
-func (s *playerStats) MaxHP() int64 {
+func (s *playerStats) MaxHP() int32 {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 	return s.maxHP
 }
 
-func (s *playerStats) SetMaxHP(v int64) {
+func (s *playerStats) SetMaxHP(v int32) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	s.maxHP = v

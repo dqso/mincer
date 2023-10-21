@@ -12,8 +12,9 @@ const (
 )
 
 type Weapon interface {
-	PhysicalDamage() float64
-	MagicalDamage() float64
+	Name() string
+	PhysicalDamage() int32
+	MagicalDamage() int32
 	AttackRadius() float64
 	CoolDown() float64
 
@@ -41,18 +42,19 @@ type noWeapon struct{}
 
 func newNoWeapon() Weapon { return &noWeapon{} }
 
-func (noWeapon) PhysicalDamage() float64 { return 0.0 }
-func (noWeapon) MagicalDamage() float64  { return 0.0 }
-func (noWeapon) AttackRadius() float64   { return 0.0 }
-func (noWeapon) CoolDown() float64       { return 100.0 }
+func (noWeapon) Name() string          { return "No weapon" }
+func (noWeapon) PhysicalDamage() int32 { return 0 }
+func (noWeapon) MagicalDamage() int32  { return 0 }
+func (noWeapon) AttackRadius() float64 { return 0.0 }
+func (noWeapon) CoolDown() float64     { return 100.0 }
 
-func (noWeapon) Attack(owner Player, attackDirection float64, acquirer projectileAcquirer) (proj Projectile, isMelee bool) {
+func (noWeapon) Attack(Player, float64, projectileAcquirer) (Projectile, bool) {
 	return nil, true
 }
 
 type warriorWeapon struct{}
 
-func (w *warriorWeapon) MagicalDamage() float64 { return 0.0 }
+func (w *warriorWeapon) MagicalDamage() int32 { return 0 }
 
 type swordWeapon struct {
 	warriorWeapon
@@ -60,9 +62,10 @@ type swordWeapon struct {
 
 func newSword() Weapon { return &swordWeapon{} }
 
-func (w *swordWeapon) PhysicalDamage() float64 { return 10.0 }
-func (w *swordWeapon) AttackRadius() float64   { return 40.0 }
-func (w *swordWeapon) CoolDown() float64       { return 0.5 }
+func (w *swordWeapon) Name() string          { return "Sword" }
+func (w *swordWeapon) PhysicalDamage() int32 { return 10 }
+func (w *swordWeapon) AttackRadius() float64 { return 40.0 }
+func (w *swordWeapon) CoolDown() float64     { return 0.5 }
 
 func (w *swordWeapon) Attack(owner Player, attackDirection float64, acquirer projectileAcquirer) (proj Projectile, isMelee bool) {
 	return nil, true
@@ -71,8 +74,8 @@ func (w *swordWeapon) Attack(owner Player, attackDirection float64, acquirer pro
 type Projectile interface {
 	Color() color.NRGBA
 	Position() Point
-	PhysicalDamage() float64
-	MagicalDamage() float64
+	PhysicalDamage() int32
+	MagicalDamage() int32
 	Radius() float64
 	Speed() float64
 	Direction() float64
@@ -82,7 +85,7 @@ type Projectile interface {
 
 type magicalWeapon struct{}
 
-func (w *magicalWeapon) PhysicalDamage() float64 { return 0.0 }
+func (w *magicalWeapon) PhysicalDamage() int32 { return 0 }
 
 type wandWeapon struct {
 	magicalWeapon
@@ -90,9 +93,10 @@ type wandWeapon struct {
 
 func newWand() Weapon { return &wandWeapon{} }
 
-func (w *wandWeapon) MagicalDamage() float64 { return 10.0 }
-func (w *wandWeapon) AttackRadius() float64  { return 40.0 }
-func (w *wandWeapon) CoolDown() float64      { return 3.0 }
+func (w *wandWeapon) Name() string          { return "Wand \"Fireball\"" }
+func (w *wandWeapon) MagicalDamage() int32  { return 10 }
+func (w *wandWeapon) AttackRadius() float64 { return 40.0 }
+func (w *wandWeapon) CoolDown() float64     { return 3.0 }
 
 type projectileAcquirer interface {
 	AcquireProjectileID() uint64
@@ -113,8 +117,8 @@ type projectile struct {
 	direction      float64
 	radius         float64
 	speed          float64
-	physicalDamage float64
-	magicalDamage  float64
+	physicalDamage int32
+	magicalDamage  int32
 	owner          uint64
 }
 
@@ -144,12 +148,12 @@ func (p *projectile) Distance() float64 {
 	return p.distance
 }
 
-func (p *projectile) Radius() float64         { return p.radius }
-func (p *projectile) Speed() float64          { return p.speed }
-func (p *projectile) Direction() float64      { return p.direction }
-func (p *projectile) PhysicalDamage() float64 { return p.physicalDamage }
-func (p *projectile) MagicalDamage() float64  { return p.magicalDamage }
-func (p *projectile) Owner() uint64           { return p.owner }
+func (p *projectile) Radius() float64       { return p.radius }
+func (p *projectile) Speed() float64        { return p.speed }
+func (p *projectile) Direction() float64    { return p.direction }
+func (p *projectile) PhysicalDamage() int32 { return p.physicalDamage }
+func (p *projectile) MagicalDamage() int32  { return p.magicalDamage }
+func (p *projectile) Owner() uint64         { return p.owner }
 
 type fireball struct {
 	*projectile

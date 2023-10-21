@@ -31,13 +31,12 @@ func (g *god) Float(min, max float64) float64 {
 }
 
 const (
-	defaultPlayerHP int64 = 100
+	defaultPlayerHP int32 = 100
 
 	defaultPlayerRadius        float64 = 10.0
 	defaultPlayerSpeed         float64 = 100.0 // per second
 	defaultPlayerCoolDown      float64 = 0.5   // seconds
 	defaultPlayerPower         float64 = 100.0
-	DefaultAttackRadius        float64 = 40.0
 	DefaultMaxFireballDistance float64 = 400.0
 
 	MaxNorth float64 = 0.0 // only zero

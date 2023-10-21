@@ -131,12 +131,14 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 
 func createOrChangePlayer(players entity.Players, p *api.Player) {
 	stats := dtoPlayerStats(p.Stats)
+	weapon := dtoWeapon(p.Weapon)
 	player, ok := players.Get(p.Id)
 	if !ok {
-		player = entity.NewPlayer(p.Id, p.Hp, stats, entity.Point{X: p.X, Y: p.Y})
+		player = entity.NewPlayer(p.Id, p.Hp, stats, weapon, entity.Point{X: p.X, Y: p.Y})
 		players.Add(player)
 	} else {
 		player.SetStats(stats)
+		player.SetWeapon(weapon)
 		player.SetHP(p.Hp)
 		player.SetPosition(entity.Point{X: p.X, Y: p.Y})
 	}
@@ -148,6 +150,15 @@ func dtoPlayerStats(stats *api.PlayerStats) entity.PlayerStats {
 		stats.Radius,
 		stats.Speed,
 		stats.MaxHP,
+	)
+}
+
+func dtoWeapon(w *api.Weapon) entity.Weapon {
+	return entity.NewWeapon(
+		w.Name,
+		w.PhysicalDamage,
+		w.MagicalDamage,
+		w.CoolDown,
 	)
 }
 
