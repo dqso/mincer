@@ -9,6 +9,9 @@ import (
 )
 
 type World interface {
+	Northwest() Point
+	Southeast() Point
+
 	NewPlayer(id uint64) (Player, error)
 	NewBot() (Bot, error)
 	Respawn(p Player)
@@ -21,8 +24,8 @@ type World interface {
 type world struct {
 	horn Horn
 
-	westNorth  Point
-	eastSouth  Point
+	northwest  Point
+	southeast  Point
 	playerList PlayerList
 	god        God
 
@@ -31,11 +34,11 @@ type world struct {
 	mxRegions sync.RWMutex
 }
 
-func NewWorld(seed int64, westNorth, eastSouth Point, horn Horn) World {
+func NewWorld(seed int64, northwest, southeast Point, horn Horn) World {
 	w := &world{
 		horn:       horn,
-		westNorth:  westNorth,
-		eastSouth:  eastSouth,
+		northwest:  northwest,
+		southeast:  southeast,
 		playerList: NewPlayerList(),
 		god:        NewGod(seed),
 		botList:    NewBotList(),
@@ -48,16 +51,24 @@ func NewWorld(seed int64, westNorth, eastSouth Point, horn Horn) World {
 	return w
 }
 
+func (w *world) Northwest() Point {
+	return w.northwest
+}
+
+func (w *world) Southeast() Point {
+	return w.southeast
+}
+
 func (w *world) Horn() Horn {
 	return w.horn
 }
 
 func (w *world) Width() float64 {
-	return math.Abs(w.westNorth.X - w.eastSouth.X)
+	return math.Abs(w.northwest.X - w.southeast.X)
 }
 
 func (w *world) Height() float64 {
-	return math.Abs(w.westNorth.Y - w.eastSouth.Y)
+	return math.Abs(w.northwest.Y - w.southeast.Y)
 }
 
 func (w *world) God() God {
@@ -66,8 +77,8 @@ func (w *world) God() God {
 
 func (w *world) SizeRect() Rect {
 	return Rect{
-		LeftUp:    w.westNorth,
-		RightDown: w.eastSouth,
+		LeftUp:    w.northwest,
+		RightDown: w.southeast,
 	}
 }
 
@@ -75,14 +86,18 @@ func (w *world) NewPlayer(id uint64) (Player, error) {
 	if _, ok := w.playerList.Get(id); ok {
 		return nil, ErrPlayerAlreadyExists
 	}
-	p := newPlayer(id, w.acquireClass(), w.Horn())
-	p.SetPosition(w.acquirePosition(p.Radius()))
+	class := w.acquireClass()
+	weapon := w.acquireWeapon(class)
+	p := newPlayer(id, class, weapon, w.Horn())
+	p.SetPosition(Point{10, 10}) // TODO //w.acquirePosition(p.Radius()))
 	w.playerList.Add(p)
 	return p, nil
 }
 
 func (w *world) NewBot() (Bot, error) {
-	b := w.botList.NewBot(w, w.acquireClass())
+	class := w.acquireClass()
+	weapon := w.acquireWeapon(class)
+	b := w.botList.NewBot(w, class, weapon)
 	b.SetPosition(w.acquirePosition(b.Radius()))
 	w.playerList.Add(b)
 	return b, nil
@@ -95,7 +110,13 @@ func (w *world) Respawn(p Player) {
 }
 
 func (w *world) acquireClass() Class {
-	return Classes()[w.God().Int(0, len(Classes())-1)]
+	list := Classes()
+	return list[w.God().Int(0, len(list)-1)]
+}
+
+func (w *world) acquireWeapon(class Class) Weapon {
+	list := Weapons(class)
+	return list[w.God().Int(0, len(list)-1)]()
 }
 
 func (w *world) acquirePosition(radius float64) Point {
@@ -112,15 +133,15 @@ func (w *world) Players() PlayerList {
 const nr int16 = 10 // amount of regions = nr * nr
 
 func (w *world) supportRegions(ctx context.Context) {
-	deltaX := math.Abs(w.eastSouth.X-w.westNorth.X) / float64(nr)
-	deltaY := math.Abs(w.eastSouth.Y-w.westNorth.Y) / float64(nr)
+	deltaX := math.Abs(w.southeast.X-w.northwest.X) / float64(nr)
+	deltaY := math.Abs(w.southeast.Y-w.northwest.Y) / float64(nr)
 
 	dpx, dpy := 0.0, 0.0
-	if w.westNorth.X < 0 {
-		dpx = math.Abs(w.westNorth.X)
+	if w.northwest.X < 0 {
+		dpx = math.Abs(w.northwest.X)
 	}
-	if w.westNorth.Y < 0 {
-		dpy = math.Abs(w.westNorth.Y)
+	if w.northwest.Y < 0 {
+		dpy = math.Abs(w.northwest.Y)
 	}
 
 	for {
@@ -157,15 +178,15 @@ func (w *world) supportRegions(ctx context.Context) {
 }
 
 func (w *world) calculateRegion(p Point) int16 {
-	deltaX := math.Abs(w.eastSouth.X-w.westNorth.X) / float64(nr)
-	deltaY := math.Abs(w.eastSouth.Y-w.westNorth.Y) / float64(nr)
+	deltaX := math.Abs(w.southeast.X-w.northwest.X) / float64(nr)
+	deltaY := math.Abs(w.southeast.Y-w.northwest.Y) / float64(nr)
 
 	dpx, dpy := 0.0, 0.0
-	if w.westNorth.X < 0 {
-		dpx = math.Abs(w.westNorth.X)
+	if w.northwest.X < 0 {
+		dpx = math.Abs(w.northwest.X)
 	}
-	if w.westNorth.Y < 0 {
-		dpy = math.Abs(w.westNorth.Y)
+	if w.northwest.Y < 0 {
+		dpy = math.Abs(w.northwest.Y)
 	}
 	return int16(math.Floor((p.X+dpx)/deltaX)) +
 		int16(math.Floor((p.Y+dpy)/deltaY))*nr

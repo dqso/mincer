@@ -56,6 +56,14 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		log.Printf("Игрок %d убит игроком %d", message.Id, message.Killer)
 		m.world.AddNewKill(message.Id, message.Killer)
 
+	case api.Code_WORLD_INFO:
+		var message api.WorldInfo
+		if err := proto.Unmarshal(data, &message); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		m.world.SetSize(message.Northwest.X, message.Northwest.Y, message.Southeast.X, message.Southeast.Y)
+
 	case api.Code_PLAYER_LIST:
 		var message api.PlayerList
 		if err := proto.Unmarshal(data, &message); err != nil {
@@ -99,6 +107,9 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			return
 		}
 		p.SetHP(msg.Hp)
+		if msg.Hp == 0 && msg.Id == m.world.Players().Me().ID() {
+			m.beReborn = make(chan struct{})
+		}
 
 	case api.Code_SET_PLAYER_POSITION:
 		var msg api.SetPlayerPosition
@@ -110,7 +121,7 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		if !ok {
 			return
 		}
-		p.SetPosition(msg.X, msg.Y)
+		p.SetPosition(entity.Point{X: msg.X, Y: msg.Y})
 
 	default:
 		log.Printf("unknown message %s", code.String())
@@ -122,12 +133,12 @@ func createOrChangePlayer(players entity.Players, p *api.Player) {
 	stats := dtoPlayerStats(p.Stats)
 	player, ok := players.Get(p.Id)
 	if !ok {
-		player = entity.NewPlayer(p.Id, p.Hp, stats, p.X, p.Y)
+		player = entity.NewPlayer(p.Id, p.Hp, stats, entity.Point{X: p.X, Y: p.Y})
 		players.Add(player)
 	} else {
 		player.SetStats(stats)
 		player.SetHP(p.Hp)
-		player.SetPosition(p.X, p.Y)
+		player.SetPosition(entity.Point{X: p.X, Y: p.Y})
 	}
 }
 
@@ -137,8 +148,6 @@ func dtoPlayerStats(stats *api.PlayerStats) entity.PlayerStats {
 		stats.Radius,
 		stats.Speed,
 		stats.MaxHP,
-		stats.MaxCoolDown,
-		stats.Power,
 	)
 }
 
@@ -182,6 +191,23 @@ func (m *Manager) disconnect() error {
 	}
 	// TODO state to const
 	if err := m.nc.Disconnect(netcode.ClientState(100), true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Manager) sendBeReborn() error {
+	var err error
+	msg := &api.Message{Code: api.Code_BE_REBORN}
+	msg.Payload, err = proto.Marshal(&api.BeReborn{})
+	if err != nil {
+		return err
+	}
+	bts, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	if err := m.nc.SendData(bts); err != nil {
 		return err
 	}
 	return nil

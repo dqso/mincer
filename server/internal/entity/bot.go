@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"log"
+	"math"
 	"time"
 )
 
@@ -21,9 +23,9 @@ type bot struct {
 	target Player
 }
 
-func newBot(w World, id uint32, class Class) (Bot, func()) {
+func newBot(w World, id uint32, class Class, weapon Weapon) (Bot, func()) {
 	b := &bot{
-		Player: newPlayer(uint64(botPrefixID)<<32|uint64(id), class, w.Horn()),
+		Player: newPlayer(uint64(botPrefixID)<<32|uint64(id), class, weapon, w.Horn()),
 		world:  w,
 	}
 	stop := make(chan struct{})
@@ -35,7 +37,10 @@ func newBot(w World, id uint32, class Class) (Bot, func()) {
 	}
 }
 
-const botRespawnTime = time.Second * 5
+const (
+	botRespawnTime     = time.Second * 5
+	preferMageDistance = 100.0
+)
 
 func (b *bot) life(stop chan struct{}) {
 	for {
@@ -53,23 +58,75 @@ func (b *bot) life(stop chan struct{}) {
 			continue
 		}
 
-		// TODO
-		//if b.target == nil {
-		//log.Printf("%d: need target", b.ID())
-		b.target = b.world.SearchNearby(b.Position(), func(p Player) bool {
-			if p.ID() == b.ID() {
-				return false
-			}
-			return true
-		})
 		if b.target != nil {
-			//log.Printf("bot %d: target has been found: player %v %v", b.BotID(), b.target.ID(), b.target.Class())
+			if b.target.IsDead() {
+				b.target = nil
+			}
 		}
-		//}
 
-		time.Sleep(time.Second)
+		// TODO
+		if b.target == nil {
+			//log.Printf("%d: need target", b.ID())
+			b.target = b.world.SearchNearby(b.Position(), func(p Player) bool {
+				if p.ID() == b.ID() {
+					return false
+				}
+				return true
+			})
+			if b.target != nil {
+				log.Printf("bot %d: target has been found: player %v %v", b.BotID(), b.target.ID(), b.target.Class()) // TODO logger
+			}
+		}
+
+		if b.target != nil {
+			var behavior botBehavior
+			distance := b.Position().Distance(b.target.Position()) - b.target.Radius()
+			if class := b.Class(); class == ClassWarrior {
+				if distance > DefaultAttackRadius {
+					behavior = runToTarget
+					// бежать до него
+				} else {
+					behavior = attackTarget
+					// остановиться и лупить
+				}
+			} else if class == ClassMage || class == ClassRanger {
+				if distance > DefaultMaxFireballDistance {
+					behavior = runToTarget
+					// бежать до него
+				} else if distance < preferMageDistance {
+					behavior = runAway
+					// убегать от него
+				} else {
+					behavior = attackTarget
+					// остановиться и лупить
+				}
+			}
+			if behavior == runToTarget || behavior == runAway {
+				botPos, vicPos := b.Position(), b.target.Position()
+				direction := math.Mod(360.0-math.Atan2(botPos.X-vicPos.X, botPos.Y-vicPos.Y)*180.0/math.Pi, 360.0)
+				if behavior == runAway {
+					direction = math.Mod(direction+180.0, 360.0)
+				}
+				b.SetDirection(direction, true)
+				b.SetAttack(false)
+			} else if behavior == attackTarget {
+				b.SetDirection(0.0, false)
+				b.SetAttack(true)
+			}
+		}
+
+		time.Sleep(time.Millisecond * 300)
 	}
 }
+
+type botBehavior uint8
+
+const (
+	idle botBehavior = iota
+	runAway
+	runToTarget
+	attackTarget
+)
 
 func (b *bot) GetPlayer() Player {
 	return b.Player

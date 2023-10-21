@@ -16,6 +16,7 @@ func (uc *Usecase) OnPlayerConnect(connect chan uint64, disconnect chan uint64) 
 				continue
 			}
 			uc.ncProducer.OnPlayerConnect(player.ID())
+			uc.ncProducer.WorldInfo(id, uc.world)
 			uc.ncProducer.PlayerList(id, uc.world.Players().Slice())
 			uc.ncProducer.SpawnPlayer(player)
 

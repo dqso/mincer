@@ -30,6 +30,7 @@ type events interface {
 	Disconnected() chan struct{}
 
 	MustDisconnect()
+	BeReborn()
 }
 
 func NewManager(initial Scene, events events, world entity.World) *Manager {

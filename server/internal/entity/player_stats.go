@@ -14,33 +14,23 @@ type PlayerStats interface {
 
 	MaxHP() int64
 	SetMaxHP(v int64)
-
-	MaxCoolDown() float64
-	SetMaxCoolDown(v float64)
-
-	Power() float64
-	SetPower(v float64)
 }
 
 type playerStats struct {
 	mx sync.RWMutex
 
-	class       Class
-	radius      float64
-	speed       float64
-	maxHP       int64
-	maxCoolDown float64 // per sec
-	power       float64
+	class  Class
+	radius float64
+	speed  float64
+	maxHP  int64
 }
 
-func newPlayerStats(class Class, radius, speed float64, maxHP int64, maxCoolDown, power float64) PlayerStats {
+func newPlayerStats(class Class, radius, speed float64, maxHP int64) PlayerStats {
 	return &playerStats{
-		class:       class,
-		radius:      radius,
-		speed:       speed,
-		maxHP:       maxHP,
-		maxCoolDown: maxCoolDown,
-		power:       power,
+		class:  class,
+		radius: radius,
+		speed:  speed,
+		maxHP:  maxHP,
 	}
 }
 
@@ -90,28 +80,4 @@ func (s *playerStats) SetMaxHP(v int64) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	s.maxHP = v
-}
-
-func (s *playerStats) MaxCoolDown() float64 {
-	s.mx.RLock()
-	defer s.mx.RUnlock()
-	return s.maxCoolDown
-}
-
-func (s *playerStats) SetMaxCoolDown(v float64) {
-	s.mx.Lock()
-	defer s.mx.Unlock()
-	s.maxCoolDown = v
-}
-
-func (s *playerStats) Power() float64 {
-	s.mx.RLock()
-	defer s.mx.RUnlock()
-	return s.power
-}
-
-func (s *playerStats) SetPower(v float64) {
-	s.mx.Lock()
-	defer s.mx.Unlock()
-	s.power = v
 }

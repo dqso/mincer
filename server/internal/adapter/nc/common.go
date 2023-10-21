@@ -23,11 +23,16 @@ func dtoPlayerToApiPlayer(player entity.Player) *api.Player {
 
 func dtoPlayerStats(stats entity.PlayerStats) *api.PlayerStats {
 	return &api.PlayerStats{
-		Class:       api.Class(stats.Class()),
-		Radius:      stats.Radius(),
-		Speed:       stats.Speed(),
-		MaxHP:       stats.MaxHP(),
-		MaxCoolDown: stats.MaxCoolDown(),
-		Power:       stats.Power(),
+		Class:  api.Class(stats.Class()),
+		Radius: stats.Radius(),
+		Speed:  stats.Speed(),
+		MaxHP:  stats.MaxHP(),
+	}
+}
+
+func dtoPoint(p entity.Point) *api.Point {
+	return &api.Point{
+		X: p.X,
+		Y: p.Y,
 	}
 }

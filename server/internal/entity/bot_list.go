@@ -6,7 +6,7 @@ import (
 )
 
 type BotList interface {
-	NewBot(w World, class Class) Bot
+	NewBot(w World, class Class, weapon Weapon) Bot
 }
 
 type botList struct {
@@ -25,9 +25,9 @@ func NewBotList() BotList {
 	}
 }
 
-func (l *botList) NewBot(w World, class Class) Bot {
+func (l *botList) NewBot(w World, class Class, weapon Weapon) Bot {
 	id := atomic.AddUint32(&l.botLastID, 1)
-	b, stop := newBot(w, id, class)
+	b, stop := newBot(w, id, class, weapon)
 	l.addBot(b)
 	l.addStop(id, stop)
 	return b

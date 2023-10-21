@@ -13,6 +13,8 @@ type Player interface {
 	GetStats() PlayerStats
 	PlayerStats
 
+	Weapon() Weapon
+
 	HP() int64
 	IsDead() bool
 	SetHP(hp int64) (wasChanged bool)
@@ -34,6 +36,8 @@ type player struct {
 
 	PlayerStats
 
+	weapon Weapon
+
 	mxHP sync.RWMutex
 	hp   int64
 
@@ -48,22 +52,21 @@ type player struct {
 	coolDown float64
 }
 
-func newPlayer(id uint64, class Class, horn Horn) Player {
+func newPlayer(id uint64, class Class, weapon Weapon, horn Horn) Player {
 	p := &player{
-		horn: horn,
-		id:   id,
+		horn:   horn,
+		id:     id,
+		weapon: weapon,
 		PlayerStats: newPlayerStats(
 			class,
 			defaultPlayerRadius,
 			defaultPlayerSpeed,
 			defaultPlayerHP,
-			defaultPlayerCoolDown,
-			defaultPlayerPower,
 		),
 		x: 0,
 		y: 0,
 	}
-	p.coolDown = p.MaxCoolDown()
+	p.coolDown = weapon.CoolDown()
 	p.hp = p.MaxHP()
 	return p
 }
@@ -72,6 +75,10 @@ func (p *player) ID() uint64 { return p.id }
 
 func (p *player) GetStats() PlayerStats {
 	return p.PlayerStats
+}
+
+func (p *player) Weapon() Weapon {
+	return p.weapon
 }
 
 func (p *player) SetClass(v Class) {
@@ -91,16 +98,6 @@ func (p *player) SetSpeed(v float64) {
 
 func (p *player) SetMaxHP(v int64) {
 	p.PlayerStats.SetMaxHP(v)
-	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
-}
-
-func (p *player) SetMaxCoolDown(v float64) {
-	p.PlayerStats.SetMaxCoolDown(v)
-	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
-}
-
-func (p *player) SetPower(v float64) {
-	p.PlayerStats.SetPower(v)
 	p.horn.SetPlayerStats(p.ID(), p.PlayerStats)
 }
 
@@ -202,7 +199,7 @@ func (p *player) Attack() (isAllowed bool) {
 			p.coolDown = 0
 		}
 	}()
-	if !p.isAttack || p.coolDown < p.MaxCoolDown() {
+	if !p.isAttack || p.coolDown < p.weapon.CoolDown() {
 		return false
 	}
 	return true
@@ -223,5 +220,9 @@ const (
 )
 
 func Classes() []Class {
-	return []Class{ClassWarrior, ClassMage, ClassRanger}
+	return []Class{
+		ClassWarrior,
+		ClassMage,
+		//ClassRanger,
+	}
 }

@@ -18,6 +18,7 @@ type Manager struct {
 	connectingInformation chan string
 	disconnected          chan struct{}
 	mustDisconnect        chan struct{}
+	beReborn              chan struct{}
 }
 
 func NewManager(tokenUrl string, world entity.World) *Manager {
@@ -29,6 +30,7 @@ func NewManager(tokenUrl string, world entity.World) *Manager {
 		connectingInformation: make(chan string, 10),
 		disconnected:          make(chan struct{}),
 		mustDisconnect:        make(chan struct{}),
+		beReborn:              make(chan struct{}),
 	}
 
 	m.start()
@@ -50,6 +52,10 @@ func (m *Manager) Disconnected() chan struct{} {
 
 func (m *Manager) MustDisconnect() {
 	close(m.mustDisconnect)
+}
+
+func (m *Manager) BeReborn() {
+	m.beReborn <- struct{}{}
 }
 
 func (m *Manager) start() {
@@ -86,6 +92,10 @@ func (m *Manager) start() {
 				}
 				log.Print("disconnect...")
 				return
+			case <-m.beReborn:
+				if err := m.sendBeReborn(); err != nil {
+					log.Print(err) // TODO logger
+				}
 			default:
 			}
 			m.nc.Update(clientTime)

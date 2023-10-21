@@ -38,7 +38,7 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 						pPos := p.Position()
 						// ударять всех в радиусе
 						if x, y := pPos.X-aPos.X, pPos.Y-aPos.Y; x*x+y*y <= rr {
-							wasChanged := p.SetHP(p.HP() - int64(p.Power()))
+							wasChanged := p.SetHP(p.HP() - int64(p.Weapon().PhysicalDamage())) // TODO and magical damage
 							if p.HP() == 0 && wasChanged {
 								uc.ncProducer.OnPlayerWasted(p.ID(), player.ID())
 							}

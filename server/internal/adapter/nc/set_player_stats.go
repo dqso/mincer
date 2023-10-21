@@ -9,14 +9,7 @@ import (
 func (p *Producer) SetPlayerStats(id uint64, stats entity.PlayerStats) {
 	p.mxPlayerStats.Lock()
 	defer p.mxPlayerStats.Unlock()
-	p.playerStats[id] = &api.PlayerStats{
-		Class:       api.Class(stats.Class()),
-		Radius:      stats.Radius(),
-		Speed:       stats.Speed(),
-		MaxHP:       stats.MaxHP(),
-		MaxCoolDown: stats.MaxCoolDown(),
-		Power:       stats.Power(),
-	}
+	p.playerStats[id] = dtoPlayerStats(stats)
 }
 
 func (p *Producer) setPlayerStatsBatch() []*api.Message {

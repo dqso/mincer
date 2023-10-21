@@ -37,5 +37,5 @@ func DrawStats(screen *ebiten.Image, me entity.Me) {
 	hp := me.HP()
 	draw(colornames.Indianred, fonts.Bold, fmt.Sprintf("%d HP", hp), float32(hp), float32(me.MaxHP()))
 
-	draw(colornames.Darkcyan, fonts.Normal, "cool down", me.CurrentCoolDown(), me.MaxCoolDown())
+	draw(colornames.Darkcyan, fonts.Normal, "cool down", me.CurrentCoolDown(), 1000 /*TODO from weapon*/)
 }

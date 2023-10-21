@@ -14,6 +14,7 @@ type ncProducer interface {
 	OnPlayerConnect(id uint64)
 	OnPlayerDisconnect(id uint64)
 	OnPlayerWasted(id uint64, killer uint64)
+	WorldInfo(toPlayerID uint64, world entity.World)
 	PlayerList(toPlayerID uint64, players []entity.Player)
 	SpawnPlayer(player entity.Player)
 	SetPlayerStats(id uint64, stats entity.PlayerStats)

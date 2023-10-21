@@ -19,15 +19,17 @@ enum Code {
   // To one client
 
   PLAYER_LIST = 30;
+  WORLD_INFO  = 31;
 
-  reserved 31 to 49;
+  reserved 32 to 49;
 
   // From client
 
   CLIENT_INFO = 50;
   QUIT        = 51;
+  BE_REBORN   = 52;
 
-  reserved 52 to 69;
+  reserved 53 to 69;
 
   // To every client
 
@@ -46,6 +48,11 @@ message Batch {
   repeated Message messages = 1;
 }
 
+message Point {
+  double x = 1;
+  double y = 2;
+}
+
 message OnPlayerConnect {
   uint64 player_id = 1;
 }
@@ -59,12 +66,17 @@ message OnPlayerWasted {
   uint64 killer = 2;
 }
 
-message Quit {
-  uint64 player_id = 1;
-}
+message Quit {}
+
+message BeReborn {}
 
 message PlayerList {
   repeated Player players = 1;
+}
+
+message WorldInfo {
+  Point northwest = 1;
+  Point southeast = 2;
 }
 
 message ClientInfo {
@@ -81,12 +93,10 @@ enum Class {
 }
 
 message PlayerStats {
-  Class  class       = 1;
-  double radius      = 2;
-  double speed       = 3;
-  int64  maxHP       = 4;
-  double maxCoolDown = 5;
-  double power       = 6;
+  Class  class  = 1;
+  double radius = 2;
+  double speed  = 3;
+  int64  maxHP  = 4;
 }
 
 message Player {

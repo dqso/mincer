@@ -27,6 +27,7 @@ type usecase interface {
 
 	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving, attack bool) error
 	Quit(ctx context.Context, fromUserID uint64) error
+	BeReborn(ctx context.Context, fromUserID uint64) error
 	OnPlayerConnect(connect chan uint64, disconnect chan uint64)
 	LifeCycle(ctx context.Context) chan struct{}
 }
@@ -58,33 +59,6 @@ func (c *Consumer) listen(ctx context.Context) {
 	// TODO ctx
 	stopped := c.usecase.LifeCycle(ctx)
 
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
 	if err := c.usecase.AddBot(); err != nil {
 		log.Print(err)
 	}
