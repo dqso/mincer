@@ -20,6 +20,7 @@ type World struct {
 
 	worldDelta entity.Point
 	screenSize entity.Point
+	MePosition entity.Point
 }
 
 func NewWorld(world entity.World) *World {
@@ -69,6 +70,9 @@ func (w *World) Update() {
 	if w.height < w.screenSize.Y-2*borderOut {
 		w.worldDelta.Y = w.screenSize.Y/2 - w.height/2
 	}
+
+	w.MePosition = me
+	w.MePosition = w.MePosition.Add(w.worldDelta.X, w.worldDelta.Y)
 }
 
 func (w *World) Draw(screen *ebiten.Image) {
@@ -77,6 +81,10 @@ func (w *World) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(w.worldDelta.X, w.worldDelta.Y)
 	screen.DrawImage(w.img, op)
+
+	for _, projectile := range w.data.ProjectileList().GetAll() {
+		w.drawProjectile(screen, projectile)
+	}
 
 	for _, player := range w.data.Players().GetAll() {
 		w.drawPlayer(screen, player, nil)
@@ -104,4 +112,10 @@ func (w *World) drawPlayer(screen *ebiten.Image, player entity.Player, border co
 		bodyColor = entity.ColorDeadPlayer()
 	}
 	vector.DrawFilledCircle(screen, float32(pos.X), float32(pos.Y), radius, bodyColor, true)
+}
+
+func (w *World) drawProjectile(screen *ebiten.Image, projectile entity.Projectile) {
+	pos := projectile.Position()
+	pos = pos.Add(w.worldDelta.X, w.worldDelta.Y)
+	vector.DrawFilledCircle(screen, float32(pos.X), float32(pos.Y), float32(projectile.Radius()), projectile.Color(), true)
 }

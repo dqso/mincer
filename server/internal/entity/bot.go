@@ -69,7 +69,7 @@ func (b *bot) life(stop chan struct{}) {
 		if b.target == nil {
 			//log.Printf("%d: need target", b.ID())
 			b.target = b.world.SearchNearby(b.Position(), func(p Player) bool {
-				if p.ID() == b.ID() {
+				if p.ID() == b.ID() || p.IsDead() {
 					return false
 				}
 				return true
@@ -82,37 +82,45 @@ func (b *bot) life(stop chan struct{}) {
 		if b.target != nil {
 			var behavior botBehavior
 			distance := b.Position().Distance(b.target.Position()) - b.target.Radius()
+			// анализ поведений
 			if class := b.Class(); class == ClassWarrior {
 				if distance > b.Weapon().AttackRadius()*0.97 {
-					behavior = runToTarget
+					behavior = runToTarget | noAttack
 					// бежать до него
 				} else {
-					behavior = attackTarget
+					behavior = stay | attackTarget
 					// остановиться и лупить
 				}
 			} else if class == ClassMage || class == ClassRanger {
 				if distance > DefaultMaxFireballDistance {
-					behavior = runToTarget
+					behavior = runToTarget | noAttack
 					// бежать до него
 				} else if distance < preferMageDistance {
-					behavior = runAway
-					// убегать от него
+					behavior = runAway | attackTarget
+					// убегать от него и стрелять
 				} else {
-					behavior = attackTarget
+					behavior = stay | attackTarget
 					// остановиться и лупить
 				}
 			}
-			if behavior == runToTarget || behavior == runAway {
-				botPos, vicPos := b.Position(), b.target.Position()
-				direction := math.Mod(360.0-math.Atan2(botPos.X-vicPos.X, botPos.Y-vicPos.Y)*180.0/math.Pi, 360.0)
-				if behavior == runAway {
+
+			// выполнение поведений
+			botPos, vicPos := b.Position(), b.target.Position()
+			direction := math.Mod(360.0-math.Atan2(botPos.X-vicPos.X, botPos.Y-vicPos.Y)*180.0/math.Pi, 360.0) // TODO Point struct
+			if behavior.Or(runToTarget, runAway) {
+				direction := direction // сохранить внешнее направление для последующего поведения
+				if behavior.Or(runAway) {
+					// развернуться
 					direction = math.Mod(direction+180.0, 360.0)
 				}
 				b.SetDirection(direction, true)
-				b.SetAttack(false)
-			} else if behavior == attackTarget {
+			} else if behavior.Or(stay) {
 				b.SetDirection(0.0, false)
-				b.SetAttack(true)
+			}
+			if behavior.Or(attackTarget) {
+				b.SetAttack(true, direction)
+			} else if behavior.Or(noAttack) {
+				b.SetAttack(false, direction)
 			}
 		}
 
@@ -122,10 +130,21 @@ func (b *bot) life(stop chan struct{}) {
 
 type botBehavior uint8
 
+func (b botBehavior) Or(behaviors ...botBehavior) bool {
+	for _, behavior := range behaviors {
+		if b&behavior > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 const (
-	idle botBehavior = iota
+	_ botBehavior = 1 << iota
+	stay
 	runAway
 	runToTarget
+	noAttack
 	attackTarget
 )
 

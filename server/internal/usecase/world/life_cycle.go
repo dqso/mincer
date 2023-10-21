@@ -22,32 +22,53 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 			default:
 			}
 
-			for _, player := range uc.world.Players().Slice() {
+			players := uc.world.Players().Slice()
+
+			for _, projectile := range uc.world.ProjectileList().Slice() {
+				//log.Printf("projectile %d: %v", projectile.ID(), projectile.Position())
+				oldPosition := projectile.Position()
+				newPosition, outOfRange := projectile.Move(deltaTime, uc.world.SizeRect())
+				victim := projectile.CollisionAnalysis(oldPosition, newPosition, players)
+				if victim != nil {
+					victim.SetHP(victim.HP() - projectile.PhysicalDamage() - projectile.MagicalDamage())
+					// TODO взрыв фаербола на всех близлежащих игроков в радиусе
+				}
+				if outOfRange || victim != nil {
+					uc.world.ProjectileList().Remove(projectile.ID())
+					uc.ncProducer.DeleteProjectile(projectile.ID())
+				}
+			}
+
+			for _, player := range players {
 				player.Move(deltaTime, uc.world.SizeRect())
 				player.Relax(deltaTime)
 			}
 
-			for _, player := range uc.world.Players().Slice() {
-				if player.Attack() /* TODO && player.Class() == entity.ClassWarrior*/ { // TODO add cursor position for mage and ranger
-					aPos := player.Position()
-					uc.world.SearchNearby(player.Position(), func(p entity.Player) bool {
-						if p.ID() == player.ID() {
-							return false
-						}
-						pPos := p.Position()
-						rr := player.Weapon().AttackRadius() + p.Radius() // учитывать радиус врага, а не только его центр тела
-						rr = rr * rr
-						// ударять всех в радиусе
-						if x, y := pPos.X-aPos.X, pPos.Y-aPos.Y; x*x+y*y <= rr {
-							wasChanged := p.SetHP(p.HP() - p.Weapon().PhysicalDamage()) // TODO and magical damage
-							if p.HP() == 0 && wasChanged {
-								uc.ncProducer.OnPlayerWasted(p.ID(), player.ID())
+			for _, player := range players {
+				if player.Attack() {
+					if projectile, isMelee := player.Weapon().Attack(player, player.DirectionAim(), uc.repoWorld); isMelee {
+						aPos := player.Position()
+						uc.world.SearchNearby(player.Position(), func(p entity.Player) bool {
+							if p.ID() == player.ID() {
+								return false
 							}
-						} else {
-							log.Print("не дотягивается", x*x+y*y, rr)
-						}
-						return false
-					})
+							pPos := p.Position()
+							rr := player.Weapon().AttackRadius() + p.Radius() // учитывать радиус врага, а не только его центр тела
+							rr = rr * rr
+							// ударять всех в радиусе
+							if x, y := pPos.X-aPos.X, pPos.Y-aPos.Y; x*x+y*y <= rr {
+								wasChanged := p.SetHP(p.HP() - p.Weapon().PhysicalDamage() - p.Weapon().MagicalDamage())
+								if p.HP() == 0 && wasChanged {
+									uc.ncProducer.OnPlayerWasted(p.ID(), player.ID())
+								}
+							}
+							return false
+						})
+					} else if projectile != nil {
+						uc.world.ProjectileList().Add(projectile)
+						uc.ncProducer.CreateProjectile(projectile)
+						//log.Printf("created projectile %d: %+v", projectile.ID(), projectile)
+					}
 				}
 			}
 

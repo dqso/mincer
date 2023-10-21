@@ -42,11 +42,12 @@ func (s *MincerScene) Update(state State) error {
 	}
 
 	state.world.Players().Me().SetDirection(s.input.Direction())
-	state.world.Players().Me().SetAttack(s.input.Attack > 0)
 
 	s.killMessages = hud.NewKillMessages(s.world.KillTable().Get())
 
 	s.render.Update()
+
+	state.world.Players().Me().SetAttack(s.input.Attack > 0, s.input.MouseDirection(s.render.MePosition))
 
 	return nil
 }

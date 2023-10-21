@@ -30,8 +30,20 @@ type Producer struct {
 	mxPlayerHP sync.Mutex
 	playerHP   map[uint64]int32
 
+	mxPlayerWeapon sync.Mutex
+	playerWeapon   map[uint64]*api.Weapon
+
+	mxCreateProjectile sync.Mutex
+	createProjectile   map[uint64]*api.CreateProjectile
+
 	mxPlayerPositions sync.Mutex
 	playerPositions   map[uint64]entity.Point
+
+	mxProjectilePositions sync.Mutex
+	projectilePositions   map[uint64]entity.Point
+
+	mxDeleteProjectile sync.Mutex
+	deleteProjectile   map[uint64]struct{}
 }
 
 type config interface {
@@ -43,12 +55,16 @@ func NewProducer(config config, server *netcode.Server) *Producer {
 		config: config,
 		server: server,
 
-		onPlayerConnect:    make(map[uint64]struct{}),
-		onPlayerDisconnect: make(map[uint64]struct{}),
-		spawnPlayer:        make(map[uint64]entity.Player),
-		playerStats:        make(map[uint64]*api.PlayerStats),
-		playerHP:           make(map[uint64]int32),
-		playerPositions:    make(map[uint64]entity.Point),
+		onPlayerConnect:     make(map[uint64]struct{}),
+		onPlayerDisconnect:  make(map[uint64]struct{}),
+		spawnPlayer:         make(map[uint64]entity.Player),
+		playerStats:         make(map[uint64]*api.PlayerStats),
+		playerHP:            make(map[uint64]int32),
+		playerWeapon:        make(map[uint64]*api.Weapon),
+		createProjectile:    make(map[uint64]*api.CreateProjectile),
+		playerPositions:     make(map[uint64]entity.Point),
+		projectilePositions: make(map[uint64]entity.Point),
+		deleteProjectile:    make(map[uint64]struct{}),
 	}
 }
 

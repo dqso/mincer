@@ -37,6 +37,13 @@ enum Code {
   SET_PLAYER_STATS    = 71;
   SET_PLAYER_HP       = 72;
   SET_PLAYER_POSITION = 73;
+  SET_PLAYER_WEAPON   = 74;
+
+  reserved 75 to 89;
+
+  CREATE_PROJECTILE       = 90;
+  SET_PROJECTILE_POSITION = 91;
+  DELETE_PROJECTILE       = 92;
 }
 
 message Message {
@@ -51,6 +58,10 @@ message Batch {
 message Point {
   double x = 1;
   double y = 2;
+}
+
+message Color {
+  uint32 rgba = 1;
 }
 
 message OnPlayerConnect {
@@ -80,9 +91,10 @@ message WorldInfo {
 }
 
 message ClientInfo {
-  double direction = 1;
-  bool   isMoving  = 2;
-  bool   attack    = 3;
+  double direction     = 1;
+  bool   isMoving      = 2;
+  bool   attack        = 3;
+  double direction_aim = 4;
 }
 
 enum Class {
@@ -142,4 +154,31 @@ message SetPlayerPosition {
   uint64 id = 1;
   double x  = 2;
   double y  = 3;
+}
+
+message SetPlayerWeapon {
+  uint64 id     = 1;
+  Weapon weapon = 2;
+}
+
+message Projectile {
+  uint64 id        = 1;
+  Color  color     = 2;
+  Point  position  = 3;
+  double radius    = 4;
+  double speed     = 5;
+  double direction = 6;
+}
+
+message CreateProjectile {
+  Projectile projectile = 1;
+}
+
+message SetProjectilePosition {
+  uint64 id       = 1;
+  Point  position = 2;
+}
+
+message DeleteProjectile {
+  uint64 id = 1;
 }

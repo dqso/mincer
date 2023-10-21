@@ -7,6 +7,7 @@ import (
 
 type Usecase struct {
 	ncProducer ncProducer
+	repoWorld  repoWorld
 	world      entity.World
 }
 
@@ -20,11 +21,20 @@ type ncProducer interface {
 	SetPlayerStats(id uint64, stats entity.PlayerStats)
 	SetPlayerHP(id uint64, hp int32)
 	SetPlayerPosition(id uint64, position entity.Point)
+	SetPlayerWeapon(id uint64, w entity.Weapon)
+	CreateProjectile(projectile entity.Projectile)
+	SetProjectilePosition(id uint64, position entity.Point)
+	DeleteProjectile(id uint64)
 }
 
-func NewUsecase(ncProducer ncProducer) *Usecase {
+type repoWorld interface {
+	AcquireProjectileID() uint64
+}
+
+func NewUsecase(ncProducer ncProducer, repoWorld repoWorld) *Usecase {
 	return &Usecase{
 		ncProducer: ncProducer,
+		repoWorld:  repoWorld,
 		world: entity.NewWorld(time.Now().UnixNano(),
 			entity.Point{X: entity.MaxWest, Y: entity.MaxNorth},
 			entity.Point{X: entity.MaxEast, Y: entity.MaxSouth},

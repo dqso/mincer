@@ -3,6 +3,7 @@ package nc_adapter
 import (
 	"github.com/dqso/mincer/server/internal/api"
 	"github.com/dqso/mincer/server/internal/entity"
+	"image/color"
 )
 
 func (p *Producer) SendPayloadToClient(clientId uint64, payloadData []byte) error {
@@ -40,9 +41,26 @@ func dtoWeapon(weapon entity.Weapon) *api.Weapon {
 	}
 }
 
+func dtoProjectile(p entity.Projectile) *api.Projectile {
+	return &api.Projectile{
+		Id:        p.ID(),
+		Color:     dtoColor(p.Color()),
+		Position:  dtoPoint(p.Position()),
+		Radius:    p.Radius(),
+		Speed:     p.Speed(),
+		Direction: p.Direction(),
+	}
+}
+
 func dtoPoint(p entity.Point) *api.Point {
 	return &api.Point{
 		X: p.X,
 		Y: p.Y,
+	}
+}
+
+func dtoColor(p color.NRGBA) *api.Color {
+	return &api.Color{
+		Rgba: uint32(p.R)<<24 | uint32(p.G)<<16 | uint32(p.B)<<8 | uint32(p.A),
 	}
 }

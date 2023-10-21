@@ -5,6 +5,7 @@ import (
 	"github.com/dqso/mincer/client/internal/entity"
 	"github.com/wirepair/netcode"
 	"google.golang.org/protobuf/proto"
+	"image/color"
 	"log"
 )
 
@@ -123,6 +124,46 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 		}
 		p.SetPosition(entity.Point{X: msg.X, Y: msg.Y})
 
+	case api.Code_SET_PLAYER_WEAPON:
+		var msg api.SetPlayerWeapon
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.Players().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetWeapon(dtoWeapon(msg.Weapon))
+
+	case api.Code_CREATE_PROJECTILE:
+		var msg api.CreateProjectile
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		m.world.ProjectileList().Add(dtoProjectile(msg.Projectile))
+
+	case api.Code_SET_PROJECTILE_POSITION:
+		var msg api.SetProjectilePosition
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		p, ok := m.world.ProjectileList().Get(msg.Id)
+		if !ok {
+			return
+		}
+		p.SetPosition(dtoPoint(msg.Position))
+
+	case api.Code_DELETE_PROJECTILE:
+		var msg api.DeleteProjectile
+		if err := proto.Unmarshal(data, &msg); err != nil {
+			log.Print(err) // TODO logger
+			return
+		}
+		m.world.ProjectileList().Remove(msg.Id)
+
 	default:
 		log.Printf("unknown message %s", code.String())
 		return
@@ -144,6 +185,10 @@ func createOrChangePlayer(players entity.Players, p *api.Player) {
 	}
 }
 
+func dtoProjectile(p *api.Projectile) entity.Projectile {
+	return entity.NewProjectile(p.Id, dtoColor(p.Color), dtoPoint(p.Position), p.Radius, p.Speed, p.Direction)
+}
+
 func dtoPlayerStats(stats *api.PlayerStats) entity.PlayerStats {
 	return entity.NewPlayerStats(
 		entity.Class(stats.Class),
@@ -162,16 +207,34 @@ func dtoWeapon(w *api.Weapon) entity.Weapon {
 	)
 }
 
+func dtoPoint(p *api.Point) entity.Point {
+	return entity.Point{
+		X: p.X,
+		Y: p.Y,
+	}
+}
+
+func dtoColor(c *api.Color) color.NRGBA {
+	return color.NRGBA{
+		R: uint8(c.Rgba >> 24 & 0xFF),
+		G: uint8(c.Rgba >> 16 & 0xFF),
+		B: uint8(c.Rgba >> 8 & 0xFF),
+		A: uint8(c.Rgba & 0xFF),
+	}
+}
+
 func (m *Manager) repeatingMessageSend() error {
 	me := m.world.Players().Me()
 	direction, isMoving := me.Direction()
 
 	var err error
 	msg := &api.Message{Code: api.Code_CLIENT_INFO}
+	attack, directionAim := me.Attack()
 	msg.Payload, err = proto.Marshal(&api.ClientInfo{
-		Direction: direction,
-		IsMoving:  isMoving,
-		Attack:    me.Attack(),
+		Direction:    direction,
+		IsMoving:     isMoving,
+		Attack:       attack,
+		DirectionAim: directionAim,
 	})
 	if err != nil {
 		return err

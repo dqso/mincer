@@ -14,6 +14,7 @@ type Player interface {
 	PlayerStats
 
 	Weapon() Weapon
+	SetWeapon(w Weapon)
 
 	HP() int32
 	IsDead() bool
@@ -24,9 +25,12 @@ type Player interface {
 
 	SetDirection(direction float64, isMoving bool)
 	Move(lifeTime time.Duration, mapSize Rect) (wasMoved bool)
-	SetAttack(a bool)
+	SetAttack(a bool, directionAim float64)
 	Attack() bool
+	DirectionAim() float64
 	Relax(lifeTime time.Duration)
+
+	getHorn() Horn
 }
 
 type player struct {
@@ -36,7 +40,8 @@ type player struct {
 
 	PlayerStats
 
-	weapon Weapon
+	mxWeapon sync.RWMutex
+	weapon   Weapon
 
 	mxHP sync.RWMutex
 	hp   int32
@@ -47,9 +52,10 @@ type player struct {
 	direction float64
 	isMoving  bool
 
-	mxAttack sync.Mutex
-	isAttack bool
-	coolDown float64
+	mxAttack     sync.RWMutex
+	isAttack     bool
+	directionAim float64
+	coolDown     float64
 }
 
 func newPlayer(id uint64, class Class, weapon Weapon, horn Horn) Player {
@@ -78,7 +84,16 @@ func (p *player) GetStats() PlayerStats {
 }
 
 func (p *player) Weapon() Weapon {
+	p.mxWeapon.RLock()
+	defer p.mxWeapon.RUnlock()
 	return p.weapon
+}
+
+func (p *player) SetWeapon(w Weapon) {
+	p.mxWeapon.Lock()
+	defer p.mxWeapon.Unlock()
+	p.weapon = w
+	p.horn.SetPlayerWeapon(p.ID(), p.weapon)
 }
 
 func (p *player) SetClass(v Class) {
@@ -181,10 +196,17 @@ func (p *player) Move(lifeTime time.Duration, mapSize Rect) (wasMoved bool) {
 	return wasMoved
 }
 
-func (p *player) SetAttack(a bool) {
+func (p *player) SetAttack(a bool, directionAim float64) {
 	p.mxAttack.Lock()
 	defer p.mxAttack.Unlock()
 	p.isAttack = a
+	p.directionAim = directionAim
+}
+
+func (p *player) DirectionAim() float64 {
+	p.mxAttack.RLock()
+	defer p.mxAttack.RUnlock()
+	return p.directionAim
 }
 
 func (p *player) Attack() (isAllowed bool) {
@@ -199,7 +221,7 @@ func (p *player) Attack() (isAllowed bool) {
 			p.coolDown = 0
 		}
 	}()
-	if !p.isAttack || p.coolDown < p.weapon.CoolDown() {
+	if !p.isAttack || p.coolDown < p.Weapon().CoolDown() {
 		return false
 	}
 	return true
@@ -209,6 +231,10 @@ func (p *player) Relax(lifeTime time.Duration) {
 	p.mxAttack.Lock()
 	defer p.mxAttack.Unlock()
 	p.coolDown += lifeTime.Seconds()
+}
+
+func (p *player) getHorn() Horn {
+	return p.horn
 }
 
 type Class int32
@@ -222,7 +248,7 @@ const (
 func Classes() []Class {
 	return []Class{
 		ClassWarrior,
-		//ClassMage,
+		ClassMage,
 		//ClassRanger,
 	}
 }

@@ -16,6 +16,13 @@ func (p Point) Distance(p2 Point) float64 {
 	return math.Sqrt(s.X*s.X + s.Y*s.Y)
 }
 
+func (p Point) Middle(p2 Point) Point {
+	return Point{
+		X: (p.X + p2.X) / 2,
+		Y: (p.Y + p2.Y) / 2,
+	}
+}
+
 type Rect struct {
 	LeftUp    Point
 	RightDown Point

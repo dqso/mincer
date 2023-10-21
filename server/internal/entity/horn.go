@@ -5,4 +5,6 @@ type Horn interface {
 	SetPlayerStats(id uint64, stats PlayerStats)
 	SetPlayerHP(id uint64, hp int32)
 	SetPlayerPosition(id uint64, position Point)
+	SetPlayerWeapon(id uint64, w Weapon)
+	SetProjectilePosition(id uint64, position Point)
 }

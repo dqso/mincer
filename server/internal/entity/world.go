@@ -18,6 +18,7 @@ type World interface {
 	SizeRect() Rect
 	Players() PlayerList
 	SearchNearby(point Point, callback func(p Player) (stop bool)) Player
+	ProjectileList() ProjectileList
 	Horn() Horn
 }
 
@@ -32,6 +33,8 @@ type world struct {
 	botList   BotList
 	regions   map[int16][]uint64
 	mxRegions sync.RWMutex
+
+	projectileList ProjectileList
 }
 
 func NewWorld(seed int64, northwest, southeast Point, horn Horn) World {
@@ -44,6 +47,8 @@ func NewWorld(seed int64, northwest, southeast Point, horn Horn) World {
 		botList:    NewBotList(),
 
 		regions: make(map[int16][]uint64),
+
+		projectileList: newProjectileList(),
 	}
 
 	go w.supportRegions(context.TODO()) // tODO
@@ -104,7 +109,10 @@ func (w *world) NewBot() (Bot, error) {
 }
 
 func (w *world) Respawn(p Player) {
-	p.SetClass(w.acquireClass())
+	class := w.acquireClass()
+	weapon := w.acquireWeapon(class)
+	p.SetClass(class)
+	p.SetWeapon(weapon)
 	p.SetHP(p.MaxHP())
 	p.SetPosition(w.acquirePosition(p.Radius()))
 }
@@ -244,4 +252,8 @@ func (w *world) SearchNearby(point Point, cb func(p Player) bool) Player {
 	}
 
 	return nil
+}
+
+func (w *world) ProjectileList() ProjectileList {
+	return w.projectileList
 }

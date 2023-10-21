@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/dqso/mincer/server/internal/adapter/nc"
 	"github.com/dqso/mincer/server/internal/adapter/repository_token"
+	"github.com/dqso/mincer/server/internal/adapter/repository_world"
 	"github.com/dqso/mincer/server/internal/configuration"
 	"github.com/dqso/mincer/server/internal/handler/nc"
 	"github.com/dqso/mincer/server/internal/handler/rest"
@@ -74,7 +75,9 @@ func main() {
 		}
 	})
 
-	usecaseWorld := usecase_world.NewUsecase(ncProducer)
+	repoWorld := repository_world.NewRepository(ctx, pgPool)
+
+	usecaseWorld := usecase_world.NewUsecase(ncProducer, repoWorld)
 
 	ncConsumer, err := nc_handler.NewConsumer(ctx, config, ncServer, usecaseWorld)
 	if err != nil {

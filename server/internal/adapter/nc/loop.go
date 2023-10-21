@@ -25,7 +25,11 @@ func (p *Producer) StartLoop(ctx context.Context) chan struct{} {
 			batch.Messages = append(batch.Messages, p.spawnPlayerBatch()...)
 			batch.Messages = append(batch.Messages, p.setPlayerStatsBatch()...)
 			batch.Messages = append(batch.Messages, p.setPlayerHPBatch()...)
+			batch.Messages = append(batch.Messages, p.setPlayerWeaponBatch()...)
 			batch.Messages = append(batch.Messages, p.setPlayerPositionBatch()...)
+			batch.Messages = append(batch.Messages, p.createProjectileBatch()...)
+			batch.Messages = append(batch.Messages, p.setProjectilePositionBatch()...)
+			batch.Messages = append(batch.Messages, p.deleteProjectileBatch()...)
 
 			bts, err := p.marshalMessage(api.Code_BATCH, batch)
 			if err != nil {

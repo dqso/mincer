@@ -25,7 +25,7 @@ type config interface {
 type usecase interface {
 	AddBot() error // TODO test
 
-	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving, attack bool) error
+	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving, attack bool, directionAim float64) error
 	Quit(ctx context.Context, fromUserID uint64) error
 	BeReborn(ctx context.Context, fromUserID uint64) error
 	OnPlayerConnect(connect chan uint64, disconnect chan uint64)
