@@ -6,6 +6,8 @@ type PlayerStats interface {
 	Class() Class
 	SetClass(v Class)
 
+	Resist
+
 	Radius() float64
 	SetRadius(v float64)
 
@@ -19,7 +21,8 @@ type PlayerStats interface {
 type playerStats struct {
 	mx sync.RWMutex
 
-	class  Class
+	class Class
+	Resist
 	radius float64
 	speed  float64
 	maxHP  int32
@@ -28,6 +31,7 @@ type playerStats struct {
 func newPlayerStats(class Class, radius, speed float64, maxHP int32) PlayerStats {
 	return &playerStats{
 		class:  class,
+		Resist: newResist(class.physicalResist(), class.magicalResist()),
 		radius: radius,
 		speed:  speed,
 		maxHP:  maxHP,
@@ -81,3 +85,23 @@ func (s *playerStats) SetMaxHP(v int32) {
 	defer s.mx.Unlock()
 	s.maxHP = v
 }
+
+type Resist interface {
+	PhysicalResist() float64
+	MagicalResist() float64
+}
+
+type resist struct {
+	physical float64
+	magical  float64
+}
+
+func newResist(physical, magical float64) *resist {
+	return &resist{
+		physical: physical,
+		magical:  magical,
+	}
+}
+
+func (r *resist) PhysicalResist() float64 { return r.physical }
+func (r *resist) MagicalResist() float64  { return r.magical }

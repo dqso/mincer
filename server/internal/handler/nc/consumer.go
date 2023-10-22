@@ -59,9 +59,9 @@ func (c *Consumer) listen(ctx context.Context) {
 	// TODO ctx
 	stopped := c.usecase.LifeCycle(ctx)
 
-	if err := c.usecase.AddBot(); err != nil {
-		log.Print(err)
-	}
+	//if err := c.usecase.AddBot(); err != nil {
+	//	log.Print(err)
+	//}
 
 	for {
 		// TODO startTime := time.Now()

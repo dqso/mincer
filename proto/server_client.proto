@@ -109,6 +109,12 @@ message PlayerStats {
   double radius = 2;
   double speed  = 3;
   int32  maxHP  = 4;
+  Resist resist = 5;
+}
+
+message Resist {
+  double physical = 1;
+  double magical  = 2;
 }
 
 message Weapon {
@@ -116,9 +122,14 @@ message Weapon {
 
   reserved 2 to 9;
 
-  int32  physical_damage = 10;
-  int32  magical_damage  = 11;
-  double cool_down       = 12;
+  Damage damage = 10;
+  reserved 11;
+  double cool_down = 12;
+}
+
+message Damage {
+  int32 physical = 1;
+  int32 magical  = 2;
 }
 
 message Player {

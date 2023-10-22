@@ -149,7 +149,7 @@ func (p *player) SetHP(hp int32) (_ int32, wasChanged bool) {
 }
 
 func (p *player) DealDamage(killerID uint64, damage Damage) {
-	newHP, wasChanged := p.SetHP(p.HP() - damage.Physical() - damage.Magical())
+	newHP, wasChanged := p.SetHP(p.HP() - damage.CalculateWith(p.PlayerStats))
 	if wasChanged && newHP == 0 {
 		p.horn.OnPlayerWasted(p.ID(), killerID)
 	}
@@ -257,8 +257,34 @@ const (
 
 func Classes() []Class {
 	return []Class{
-		//ClassWarrior,
-		//ClassMage,
+		ClassWarrior,
+		ClassMage,
 		ClassRanger,
+	}
+}
+
+func (c Class) physicalResist() float64 {
+	switch c {
+	case ClassWarrior:
+		return 1.46
+	case ClassMage:
+		return 1.0
+	case ClassRanger:
+		return 1.21
+	default:
+		return 1.0
+	}
+}
+
+func (c Class) magicalResist() float64 {
+	switch c {
+	case ClassWarrior:
+		return 1.0
+	case ClassMage:
+		return 1.34
+	case ClassRanger:
+		return 1.05
+	default:
+		return 1.0
 	}
 }

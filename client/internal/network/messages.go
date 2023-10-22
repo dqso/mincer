@@ -192,6 +192,8 @@ func dtoProjectile(p *api.Projectile) entity.Projectile {
 func dtoPlayerStats(stats *api.PlayerStats) entity.PlayerStats {
 	return entity.NewPlayerStats(
 		entity.Class(stats.Class),
+		stats.Resist.Physical,
+		stats.Resist.Magical,
 		stats.Radius,
 		stats.Speed,
 		stats.MaxHP,
@@ -201,8 +203,8 @@ func dtoPlayerStats(stats *api.PlayerStats) entity.PlayerStats {
 func dtoWeapon(w *api.Weapon) entity.Weapon {
 	return entity.NewWeapon(
 		w.Name,
-		w.PhysicalDamage,
-		w.MagicalDamage,
+		w.Damage.Physical,
+		w.Damage.Magical,
 		w.CoolDown,
 	)
 }

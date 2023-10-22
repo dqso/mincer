@@ -23,21 +23,35 @@ func dtoPlayerToApiPlayer(player entity.Player) *api.Player {
 	}
 }
 
+func dtoResist(r entity.Resist) *api.Resist {
+	return &api.Resist{
+		Physical: r.PhysicalResist(),
+		Magical:  r.MagicalResist(),
+	}
+}
+
 func dtoPlayerStats(stats entity.PlayerStats) *api.PlayerStats {
 	return &api.PlayerStats{
 		Class:  api.Class(stats.Class()),
+		Resist: dtoResist(stats),
 		Radius: stats.Radius(),
 		Speed:  stats.Speed(),
 		MaxHP:  stats.MaxHP(),
 	}
 }
 
+func dtoDamage(d entity.Damage) *api.Damage {
+	return &api.Damage{
+		Physical: d.Physical(),
+		Magical:  d.Magical(),
+	}
+}
+
 func dtoWeapon(weapon entity.Weapon) *api.Weapon {
 	return &api.Weapon{
-		Name:           weapon.Name(),
-		PhysicalDamage: weapon.Damage().Physical(),
-		MagicalDamage:  weapon.Damage().Magical(),
-		CoolDown:       weapon.CoolDown(),
+		Name:     weapon.Name(),
+		Damage:   dtoDamage(weapon.Damage()),
+		CoolDown: weapon.CoolDown(),
 	}
 }
 
