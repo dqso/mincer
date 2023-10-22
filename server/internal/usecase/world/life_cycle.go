@@ -34,7 +34,8 @@ func (uc *Usecase) StartLifeCycle(ctx context.Context) chan struct{} {
 				victim := projectile.CollisionAnalysis(middlePosition, players)
 				if victim != nil {
 					if projectile.AttackRadius() <= 1e-3 {
-						victim.DealDamage(projectile.Owner(), projectile.Damage())
+						projectileOwner, _ := uc.world.Players().Get(projectile.Owner())
+						victim.DealDamage(projectile.Owner(), projectileOwner, projectile.Damage())
 					} else {
 						uc.dealDamageInRadius(
 							middlePosition, projectile.Owner(),
@@ -80,9 +81,10 @@ func (uc *Usecase) StartLifeCycle(ctx context.Context) chan struct{} {
 	return stopped
 }
 
-func (uc *Usecase) dealDamageInRadius(position entity.Point, attacker uint64, radius float64, damage entity.Damage) {
+func (uc *Usecase) dealDamageInRadius(position entity.Point, attackerID uint64, radius float64, damage entity.Damage) {
+	attacker, _ := uc.world.Players().Get(attackerID)
 	uc.world.SearchNearby(position, func(p entity.Player) bool {
-		if p.ID() == attacker {
+		if p.ID() == attackerID {
 			return false
 		}
 		pPos := p.Position()
@@ -90,7 +92,7 @@ func (uc *Usecase) dealDamageInRadius(position entity.Point, attacker uint64, ra
 		rr = rr * rr
 		// ударять всех в радиусе
 		if x, y := pPos.X-position.X, pPos.Y-position.Y; x*x+y*y <= rr {
-			p.DealDamage(attacker, damage)
+			p.DealDamage(attackerID, attacker, damage)
 		}
 		return false
 	})

@@ -7,8 +7,8 @@ type World interface {
 	Players() Players
 	ProjectileList() ProjectileList
 
-	AddNewKill(playerID, killerID uint64)
-	KillTable() KillTable
+	AddNewKill(playerID uint64, playerClass Class, killerID uint64, killerClass Class)
+	ActionTable() ActionTable
 }
 
 type world struct {
@@ -17,16 +17,16 @@ type world struct {
 	east, south    float64
 	players        Players
 	projectileList ProjectileList
-	killTable      KillTable
+	actionTable    ActionTable
 }
 
-const maxKillTableElements = 5
+const maxActionTableElements = 5
 
 func NewWorld() World {
 	return &world{
 		players:        NewPlayers(),
 		projectileList: NewProjectileList(),
-		killTable:      newKillTable(maxKillTableElements),
+		actionTable:    newActionTable(maxActionTableElements),
 	}
 }
 
@@ -47,10 +47,8 @@ func (w *world) Size() (float64, float64, float64, float64) {
 func (w *world) Players() Players               { return w.players }
 func (w *world) ProjectileList() ProjectileList { return w.projectileList }
 
-func (w *world) AddNewKill(playerID, killerID uint64) {
-	player, _ := w.players.Get(playerID)
-	killer, _ := w.players.Get(killerID)
-	w.killTable.Add(playerID, player, killerID, killer)
+func (w *world) AddNewKill(playerID uint64, playerClass Class, killerID uint64, killerClass Class) {
+	w.actionTable.AddKill(playerID, playerClass, killerID, killerClass)
 }
 
-func (w *world) KillTable() KillTable { return w.killTable }
+func (w *world) ActionTable() ActionTable { return w.actionTable }

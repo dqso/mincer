@@ -13,7 +13,7 @@ type MincerScene struct {
 	world  entity.World
 	render *render.World
 
-	killMessages []hud.KillMessageRender
+	actionMessages []hud.ActionMessageRender
 }
 
 func NewMincerScene(world entity.World) *MincerScene {
@@ -43,7 +43,7 @@ func (s *MincerScene) Update(state State) error {
 
 	state.world.Players().Me().SetDirection(s.input.Direction())
 
-	s.killMessages = hud.NewKillMessages(s.world.KillTable().Get())
+	s.actionMessages = hud.NewActionMessages(s.world.ActionTable().Get())
 
 	s.render.Update()
 
@@ -70,7 +70,7 @@ func (s *MincerScene) Draw(screen *ebiten.Image) {
 	}
 
 	var y float32 = 0.0
-	for _, message := range s.killMessages {
+	for _, message := range s.actionMessages {
 		y += float32(message.Draw(screen, float64(y)))
 	}
 }

@@ -15,6 +15,7 @@ type Me interface {
 	SetDirection(d float64, isMoving bool)
 	Attack() (bool, float64)
 	SetAttack(v bool, direction float64)
+	ResetCoolDown()
 	CurrentCoolDown() float64
 }
 
@@ -49,9 +50,12 @@ func (m *me) SetAttack(v bool, direction float64) {
 		return
 	}
 	m.attack, m.directionAim = v, direction
-	if v && !m.isCoolDown {
-		m.isCoolDown, m.coolDownStart = true, time.Now()
-	}
+	//if v && !m.isCoolDown {
+	//}
+}
+
+func (m *me) ResetCoolDown() {
+	m.isCoolDown, m.coolDownStart = true, time.Now()
 }
 
 func (m *me) CurrentCoolDown() float64 {

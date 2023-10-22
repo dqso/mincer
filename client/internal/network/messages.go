@@ -38,6 +38,7 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			return
 		}
 		log.Printf("Присоединился %d", message.PlayerId)
+		m.world.ActionTable().AddConnecting(message.PlayerId)
 
 	case api.Code_ON_PLAYER_DISCONNECT:
 		var message api.OnPlayerDisconnect
@@ -46,6 +47,7 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			return
 		}
 		log.Printf("Отсоединился %d", message.PlayerId)
+		m.world.ActionTable().AddDisconnecting(message.PlayerId)
 		m.world.Players().Remove(message.PlayerId)
 
 	case api.Code_ON_PLAYER_WASTED:
@@ -54,8 +56,11 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			log.Print(err) // TODO logger
 			return
 		}
-		log.Printf("Игрок %d убит игроком %d", message.Id, message.Killer)
-		m.world.AddNewKill(message.Id, message.Killer)
+		log.Printf("Игрок %d убит игроком %d", message.PlayerId, message.KillerId)
+		m.world.AddNewKill(
+			message.PlayerId, entity.Class(message.PlayerClass),
+			message.KillerId, entity.Class(message.KillerClass),
+		)
 
 	case api.Code_ON_PLAYER_ATTACKED:
 		var message api.OnPlayerAttacked
@@ -64,6 +69,9 @@ func (m *Manager) decodeMessageWithCode(code api.Code, data []byte) {
 			return
 		}
 		log.Printf("Игрок %d атакует", message.Id)
+		if m.world.Players().Me().ID() == message.Id {
+			m.world.Players().Me().ResetCoolDown()
+		}
 
 	case api.Code_WORLD_INFO:
 		var message api.WorldInfo

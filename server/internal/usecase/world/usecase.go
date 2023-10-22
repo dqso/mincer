@@ -17,7 +17,7 @@ type Usecase struct {
 type ncProducer interface {
 	OnPlayerConnect(id uint64)
 	OnPlayerDisconnect(id uint64)
-	OnPlayerWasted(id uint64, killer uint64)
+	OnPlayerWasted(playerID uint64, playerClass entity.Class, killerID uint64, killerClass entity.Class)
 	OnPlayerAttacked(id uint64, directionAim float64)
 	WorldInfo(toPlayerID uint64, world entity.World)
 	PlayerList(toPlayerID uint64, players []entity.Player)

@@ -20,7 +20,7 @@ type Player interface {
 	HP() int32
 	IsDead() bool
 	SetHP(hp int32) (newHP int32, wasChanged bool)
-	DealDamage(killerID uint64, damage Damage)
+	DealDamage(attackerID uint64, attacker Player, damage Damage)
 
 	Position() Point
 	SetPosition(p Point)
@@ -153,10 +153,14 @@ func (p *player) SetHP(hp int32) (_ int32, wasChanged bool) {
 	return hp, wasChanged
 }
 
-func (p *player) DealDamage(killerID uint64, damage Damage) {
+func (p *player) DealDamage(attackerID uint64, attacker Player, damage Damage) {
 	newHP, wasChanged := p.SetHP(p.HP() - damage.CalculateWith(p.PlayerStats))
 	if wasChanged && newHP == 0 {
-		p.horn.OnPlayerWasted(p.ID(), killerID)
+		var attackerClass Class
+		if attacker != nil {
+			attackerClass = attacker.Class()
+		}
+		p.horn.OnPlayerWasted(p.ID(), p.Class(), attackerID, attackerClass)
 	}
 }
 
@@ -246,7 +250,9 @@ func (p *player) Attack() (isAllowed bool) {
 func (p *player) Relax(lifeTime time.Duration) {
 	p.mxAttack.Lock()
 	defer p.mxAttack.Unlock()
-	p.coolDown += lifeTime.Seconds()
+	if p.coolDown < p.Weapon().CoolDown() {
+		p.coolDown += lifeTime.Seconds()
+	}
 }
 
 func (p *player) getHorn() Horn {

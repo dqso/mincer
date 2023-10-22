@@ -74,8 +74,10 @@ message OnPlayerDisconnect {
 }
 
 message OnPlayerWasted {
-  uint64 id     = 1;
-  uint64 killer = 2;
+  uint64 playerId    = 1;
+  Class  playerClass = 2;
+  uint64 killerId    = 3;
+  Class  killerClass = 4;
 }
 
 message Quit {}
