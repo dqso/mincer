@@ -61,7 +61,11 @@ func (c *Consumer) listen(ctx context.Context) {
 
 	stopped := c.usecase.StartLifeCycle(ctx)
 
-	//c.usecase.AddBot()
+	c.usecase.AddBot()
+	c.usecase.AddBot()
+	c.usecase.AddBot()
+	c.usecase.AddBot()
+	c.usecase.AddBot()
 
 	for {
 		// TODO startTime := time.Now()

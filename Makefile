@@ -1,4 +1,4 @@
-.PHONY: run_server, run_client, generate_server, generate_client
+.PHONY: build run_server run_client generate_server generate_client
 
 run_server: generate_server
 	cd server; POSTGRES_PASSWORD_FILE=config/pg_password \
@@ -14,3 +14,10 @@ run_client: generate_client
 
 generate_client:
 	cd client; go generate ./...
+
+build: generate_server generate_client
+	cd client; go build -o ../bin/client ./cmd/main.go
+	cd server; go build -o ../bin/server ./cmd/main.go
+
+#build_docker: generate_server generate_client
+#	docker build -f ./docker/client_build.Dockerfile --output bin .
