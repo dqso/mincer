@@ -115,7 +115,7 @@ func (w *world) AcquireBotID() uint32 { return w.botList.AcquireID() }
 func (w *world) Respawn(p Player) {
 	class := w.AcquireClass()
 	weapon := w.AcquireWeapon(class)
-	p.SetClass(class)
+	p.SetStats(newPlayerStats(class, defaultPlayerRadius, defaultPlayerHP))
 	p.SetWeapon(weapon)
 	p.SetHP(p.MaxHP())
 	p.SetPosition(w.acquirePosition(p.Radius()))

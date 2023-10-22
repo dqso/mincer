@@ -34,8 +34,7 @@ const (
 	defaultPlayerHP int32 = 100
 
 	defaultPlayerRadius        float64 = 10.0
-	defaultPlayerSpeed         float64 = 100.0 // per second
-	defaultPlayerCoolDown      float64 = 0.5   // seconds
+	defaultPlayerCoolDown      float64 = 0.5 // seconds
 	defaultPlayerPower         float64 = 100.0
 	DefaultMaxFireballDistance float64 = 400.0
 

@@ -28,12 +28,12 @@ type playerStats struct {
 	maxHP  int32
 }
 
-func newPlayerStats(class Class, radius, speed float64, maxHP int32) PlayerStats {
+func newPlayerStats(class Class, radius float64, maxHP int32) PlayerStats {
 	return &playerStats{
 		class:  class,
 		Resist: newResist(class.physicalResist(), class.magicalResist()),
 		radius: radius,
-		speed:  speed,
+		speed:  class.speed(),
 		maxHP:  maxHP,
 	}
 }

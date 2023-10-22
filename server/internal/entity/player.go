@@ -11,6 +11,7 @@ type Player interface {
 	ID() uint64
 
 	GetStats() PlayerStats
+	SetStats(stats PlayerStats)
 	PlayerStats
 
 	Weapon() Weapon
@@ -67,7 +68,6 @@ func NewPlayer(id uint64, class Class, weapon Weapon, horn Horn) Player {
 		PlayerStats: newPlayerStats(
 			class,
 			defaultPlayerRadius,
-			defaultPlayerSpeed,
 			defaultPlayerHP,
 		),
 		x: 0,
@@ -82,6 +82,11 @@ func (p *player) ID() uint64 { return p.id }
 
 func (p *player) GetStats() PlayerStats {
 	return p.PlayerStats
+}
+
+func (p *player) SetStats(stats PlayerStats) {
+	p.PlayerStats = stats
+	p.horn.SetPlayerStats(p.ID(), stats)
 }
 
 func (p *player) Weapon() Weapon {
@@ -274,6 +279,19 @@ func (c Class) String() string {
 		return "ranger"
 	default:
 		return ""
+	}
+}
+
+func (c Class) speed() float64 {
+	switch c {
+	case ClassWarrior:
+		return 100.0
+	case ClassMage:
+		return 97.0
+	case ClassRanger:
+		return 95.0
+	default:
+		return 100.0
 	}
 }
 
