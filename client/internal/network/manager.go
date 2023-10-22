@@ -68,6 +68,7 @@ func (m *Manager) start() {
 			m.connectingInformation <- err.Error()
 			return
 		}
+		log.Printf("server addresses: %v", token.ServerAddrs)
 		m.world.Players().Me().SetID(id)
 		m.nc = netcode.NewClient(token)
 		m.nc.SetId(id)
@@ -110,19 +111,8 @@ func (m *Manager) start() {
 
 			if err := m.repeatingMessageSend(); err != nil {
 				log.Print(err) // TODO logger
+				//return
 			}
-			//case <-ctx.Done():
-			//	log.Printf("network manager closed with error: %v", ctx.Err())
-			//	return
-			//case <-m.stop:
-			//	log.Printf("network manager successfully closed")
-			//	return
-			//case <-time.After(time.Second):
-			//	log.Printf("network manager: tick")
-			//	if err := m.nc.SendData([]byte("tick")); err != nil {
-			//		log.Printf("tick send error: %v", err)
-			//	}
-			//}
 		}
 	}()
 	//return done

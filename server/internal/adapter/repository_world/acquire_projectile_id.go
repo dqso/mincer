@@ -2,6 +2,7 @@ package repository_world
 
 import (
 	"context"
+	"github.com/dqso/mincer/server/internal/log"
 	"log/slog"
 	"math"
 	"math/rand"
@@ -10,8 +11,7 @@ import (
 func (r *Repository) AcquireProjectileID() uint64 {
 	id, ok := <-r.projectileIDs
 	if !ok {
-		r.logger.Warn("unable to acquire the projectile id because projectileIDs channel is closed. Random numbers are used")
-		return rand.Uint64()
+		return 0
 	}
 	r.logger.Debug("projectile id has been acquired",
 		slog.Uint64("id", id),
@@ -49,8 +49,10 @@ func (r *Repository) acquireProjectileID(ctx context.Context) {
 			return id, nil
 		}()
 		if err != nil {
-			r.logger.Error("unable to acquire the projectile id")
-			continue
+			r.logger.Error("unable to acquire the projectile id. Random numbers are used",
+				log.Err(err),
+			)
+			id = rand.Uint64()
 		}
 		select {
 		case <-ctx.Done():

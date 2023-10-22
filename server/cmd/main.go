@@ -89,7 +89,7 @@ func main() {
 		return
 	}
 	closer.Add(ncConsumer.Close)
-	logger.Info("netcode server started...", slog.Any("address", config.NCAddress()))
+	logger.Info("netcode server started...", slog.Any("port", config.NCPort()))
 
 	repositoryToken := repository_token.NewRepository(logger, pgPool)
 

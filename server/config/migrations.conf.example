@@ -1,0 +1,8 @@
+[database]
+host = postgres
+port = 5432
+database = mincer
+user = mincer
+password = password
+
+[data]

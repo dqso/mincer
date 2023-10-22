@@ -9,6 +9,7 @@ type Usecase struct {
 
 type config interface {
 	NCPrivateKey() []byte
+	NCPort() int
 }
 
 type repository interface {

@@ -3,6 +3,7 @@ package usecase_token
 import (
 	"context"
 	"github.com/dqso/mincer/server/internal/entity"
+	"github.com/dqso/mincer/server/pkg/nc"
 	"github.com/wirepair/netcode"
 	"net"
 )
@@ -18,9 +19,14 @@ func (uc Usecase) AcquireToken(ctx context.Context) (uint64, []byte, error) {
 		return 0, nil, err
 	}
 
+	ip, err := nc.GetLocalIP()
+	if err != nil {
+		return 0, nil, err
+	}
+
 	token := netcode.NewConnectToken()
 	err = token.Generate(clientID,
-		[]net.UDPAddr{{IP: net.ParseIP("192.168.0.17"), Port: 12345}}, // TODO create table, caching...
+		[]net.UDPAddr{{IP: ip, Port: uc.config.NCPort()}},
 		netcode.VERSION_INFO,
 		entity.NCProtocol,
 		10,

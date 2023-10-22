@@ -13,7 +13,7 @@ type envModel struct {
 	PostgresUsername string `env:"POSTGRES_USERNAME,notEmpty" envDefault:"mincer"`
 	PostgresPassword string `env:"POSTGRES_PASSWORD_FILE,file,required"`
 
-	NCAddress          string     `env:"NC_ADDRESS,notEmpty" envDefault:"192.168.0.17:12345"` // TODO default
+	NCPort             int        `env:"NC_PORT,notEmpty" envDefault:"12345"`
 	NCPrivateKey       PrivateKey `env:"NC_PRIVATE_KEY_FILE,file,required"`
 	NCMaxClients       int        `env:"NC_MAX_CLIENTS,notEmpty" envDefault:"256"`
 	NCRequestPerSecond int        `env:"NC_REQUEST_PER_SECOND,notEmpty" envDefault:"60"`
@@ -29,7 +29,7 @@ func (c Config) PostgresDatabase() string { return c.env.PostgresDatabase }
 func (c Config) PostgresUsername() string { return c.env.PostgresUsername }
 func (c Config) PostgresPassword() string { return c.env.PostgresPassword }
 
-func (c Config) NCAddress() string       { return c.env.NCAddress }
+func (c Config) NCPort() int             { return c.env.NCPort }
 func (c Config) NCPrivateKey() []byte    { return c.env.NCPrivateKey }
 func (c Config) NCMaxClients() int       { return c.env.NCMaxClients }
 func (c Config) NCRequestPerSecond() int { return c.env.NCRequestPerSecond }

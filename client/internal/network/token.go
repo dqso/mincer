@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/wirepair/netcode"
+	"io"
 	"log"
 	"net/http"
 )
@@ -26,8 +28,12 @@ func (m *Manager) getConnectToken(ctx context.Context) (uint64, *netcode.Connect
 	}
 	defer resp.Body.Close()
 	var response NetcodeToken
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	bts, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return 0, nil, err
+	}
+	if err := json.Unmarshal(bts, &response); err != nil {
+		return 0, nil, fmt.Errorf("unable to decode json: %v.\nReceived message: %s", err, string(bts))
 	}
 	log.Printf("%d: %s", response.ClientID, response.ConnectToken)
 

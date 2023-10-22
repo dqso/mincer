@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: mincer
+      POSTGRES_USER: mincer
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets:
+      - pg_password
+
+#  server:
+#    build:
+#      context: .
+#      dockerfile: docker/server.Dockerfile
+#    ports:
+#      - "8080:8080"
+#      - "12345:12345"
+#    environment:
+#      LOG_LEVEL: info
+#      REST_ADDRESS: 0.0.0.0:8080
+#      POSTGRES_HOST: postgres
+#      POSTGRES_PORT: 5432
+#      POSTGRES_DATABASE: mincer
+#      POSTGRES_USERNAME: mincer
+#      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+#      NC_PORT: 12345
+#      NC_PRIVATE_KEY_FILE: /run/secrets/nc_private_key
+#      NC_MAX_CLIENTS: 256
+#      NC_REQUEST_PER_SECOND: 60
+#    secrets:
+#      - pg_password
+#      - nc_private_key
+
+  migrations:
+    build:
+      dockerfile: docker/migrations.Dockerfile
+      context: .
+    environment:
+      DESTINATION: ${DESTINATION:-last}
+    secrets:
+      - migrations_config
+
+secrets:
+  pg_password:
+    file: server/config/pg_password
+  nc_private_key:
+    file: server/config/nc_private_key
+  migrations_config:
+    file: server/config/migrations.conf
+
+volumes:
+  pg_data:

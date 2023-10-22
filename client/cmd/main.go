@@ -22,6 +22,7 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
 	log.SetFlags(log.Llongfile | log.Ltime | log.Ldate)
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
