@@ -59,7 +59,7 @@ type player struct {
 	coolDown     float64
 }
 
-func newPlayer(id uint64, class Class, weapon Weapon, horn Horn) Player {
+func NewPlayer(id uint64, class Class, weapon Weapon, horn Horn) Player {
 	p := &player{
 		horn:   horn,
 		id:     id,
@@ -234,6 +234,7 @@ func (p *player) Attack() (isAllowed bool) {
 	if !p.isAttack || p.coolDown < p.Weapon().CoolDown() {
 		return false
 	}
+	p.horn.OnPlayerAttacked(p.ID(), p.directionAim)
 	return true
 }
 
@@ -260,6 +261,19 @@ func Classes() []Class {
 		ClassWarrior,
 		ClassMage,
 		ClassRanger,
+	}
+}
+
+func (c Class) String() string {
+	switch c {
+	case ClassWarrior:
+		return "warrior"
+	case ClassMage:
+		return "mage"
+	case ClassRanger:
+		return "ranger"
+	default:
+		return ""
 	}
 }
 

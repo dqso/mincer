@@ -3,6 +3,7 @@ package usecase_world
 import (
 	"context"
 	"fmt"
+	"log/slog"
 )
 
 func (uc *Usecase) BeReborn(ctx context.Context, fromUserID uint64) error {
@@ -14,5 +15,8 @@ func (uc *Usecase) BeReborn(ctx context.Context, fromUserID uint64) error {
 		return fmt.Errorf("player has some hp")
 	}
 	uc.world.Respawn(player)
+	uc.logger.Info("player has been reborn",
+		slog.Uint64("id", fromUserID),
+	)
 	return nil
 }

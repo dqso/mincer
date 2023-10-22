@@ -2,12 +2,13 @@ package rest
 
 import (
 	"context"
-	"log"
+	"github.com/dqso/mincer/server/internal/log"
 	"net/http"
 	"time"
 )
 
 type Server struct {
+	logger log.Logger
 	config config
 	server *http.Server
 }
@@ -16,8 +17,9 @@ type config interface {
 	RestAddress() string
 }
 
-func NewServer(config config, handler http.Handler) *Server {
+func NewServer(logger log.Logger, config config, handler http.Handler) *Server {
 	s := &Server{
+		logger: logger.With(log.Module("rest_server")),
 		config: config,
 		server: &http.Server{
 			Addr:    config.RestAddress(),
@@ -32,7 +34,7 @@ func (s Server) Start(ctx context.Context) error {
 	go func() {
 		defer close(chErr)
 		if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Print(err) // TODO logger
+			s.logger.Error("listen and serve error", log.Err(err))
 			chErr <- err
 		}
 	}()

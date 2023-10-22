@@ -3,13 +3,14 @@ package nc_adapter
 import (
 	"github.com/dqso/mincer/server/internal/api"
 	"github.com/dqso/mincer/server/internal/entity"
-	"log"
+	"github.com/dqso/mincer/server/internal/log"
+	"log/slog"
 )
 
 func (p *Producer) SetPlayerStats(id uint64, stats entity.PlayerStats) {
 	p.mxPlayerStats.Lock()
 	defer p.mxPlayerStats.Unlock()
-	p.playerStats[id] = dtoPlayerStats(stats)
+	p.playerStats[id] = stats
 }
 
 func (p *Producer) setPlayerStatsBatch() []*api.Message {
@@ -18,12 +19,14 @@ func (p *Producer) setPlayerStatsBatch() []*api.Message {
 	defer clear(p.playerStats)
 	batch := make([]*api.Message, 0, len(p.playerStats))
 	for id, stats := range p.playerStats {
-		msg, err := p.prepareMessage(api.Code_SET_PLAYER_STATS, &api.SetPlayerStats{Id: id, Stats: stats})
-		if err != nil {
-			log.Print(err) // TODO logger
-			continue
-		}
-		batch = append(batch, msg)
+		p.logger.Debug("set player stats",
+			slog.Uint64("id", id),
+			log.Stats(stats),
+		)
+		batch = p.appendToBatch(batch, api.Code_SET_PLAYER_STATS, &api.SetPlayerStats{
+			Id:    id,
+			Stats: dtoPlayerStats(stats),
+		})
 	}
 	return batch
 }

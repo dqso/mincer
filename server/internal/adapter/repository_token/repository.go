@@ -1,13 +1,18 @@
 package repository_token
 
-import "github.com/jackc/pgx/v5/pgxpool"
+import (
+	"github.com/dqso/mincer/server/internal/log"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
 type Repository struct {
-	pool *pgxpool.Pool
+	logger log.Logger
+	pool   *pgxpool.Pool
 }
 
-func NewRepository(pool *pgxpool.Pool) *Repository {
+func NewRepository(logger log.Logger, pool *pgxpool.Pool) *Repository {
 	return &Repository{
-		pool: pool,
+		logger: logger.With(log.Module("repo_token")),
+		pool:   pool,
 	}
 }

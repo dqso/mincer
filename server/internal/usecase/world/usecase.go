@@ -1,11 +1,14 @@
 package usecase_world
 
 import (
+	"context"
 	"github.com/dqso/mincer/server/internal/entity"
+	"github.com/dqso/mincer/server/internal/log"
 	"time"
 )
 
 type Usecase struct {
+	logger     log.Logger
 	ncProducer ncProducer
 	repoWorld  repoWorld
 	world      entity.World
@@ -15,6 +18,7 @@ type ncProducer interface {
 	OnPlayerConnect(id uint64)
 	OnPlayerDisconnect(id uint64)
 	OnPlayerWasted(id uint64, killer uint64)
+	OnPlayerAttacked(id uint64, directionAim float64)
 	WorldInfo(toPlayerID uint64, world entity.World)
 	PlayerList(toPlayerID uint64, players []entity.Player)
 	SpawnPlayer(player entity.Player)
@@ -31,11 +35,13 @@ type repoWorld interface {
 	AcquireProjectileID() uint64
 }
 
-func NewUsecase(ncProducer ncProducer, repoWorld repoWorld) *Usecase {
+func NewUsecase(ctx context.Context, logger log.Logger, ncProducer ncProducer, repoWorld repoWorld) *Usecase {
 	return &Usecase{
+		logger:     logger.With(log.Module("uc_world")),
 		ncProducer: ncProducer,
 		repoWorld:  repoWorld,
-		world: entity.NewWorld(time.Now().UnixNano(),
+		world: entity.NewWorld(ctx,
+			time.Now().UnixNano(),
 			entity.Point{X: entity.MaxWest, Y: entity.MaxNorth},
 			entity.Point{X: entity.MaxEast, Y: entity.MaxSouth},
 			ncProducer,

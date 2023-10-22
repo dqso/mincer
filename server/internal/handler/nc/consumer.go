@@ -3,14 +3,16 @@ package nc_handler
 import (
 	"context"
 	"github.com/dqso/mincer/server/internal/api"
+	"github.com/dqso/mincer/server/internal/log"
 	"github.com/wirepair/netcode"
 	"google.golang.org/protobuf/proto"
-	"log"
+	"log/slog"
 	"reflect"
 	"time"
 )
 
 type Consumer struct {
+	logger  log.Logger
 	config  config
 	server  *netcode.Server
 	usecase usecase
@@ -23,17 +25,18 @@ type config interface {
 }
 
 type usecase interface {
-	AddBot() error // TODO test
+	AddBot()
 
 	ClientInfo(ctx context.Context, fromUserID uint64, direction float64, isMoving, attack bool, directionAim float64) error
 	Quit(ctx context.Context, fromUserID uint64) error
 	BeReborn(ctx context.Context, fromUserID uint64) error
 	OnPlayerConnect(connect chan uint64, disconnect chan uint64)
-	LifeCycle(ctx context.Context) chan struct{}
+	StartLifeCycle(ctx context.Context) chan struct{}
 }
 
-func NewConsumer(ctx context.Context, config config, server *netcode.Server, usecase usecase) (*Consumer, error) {
+func NewConsumer(ctx context.Context, logger log.Logger, config config, server *netcode.Server, usecase usecase) (*Consumer, error) {
 	c := &Consumer{
+		logger:  logger.With(log.Module("nc_consumer")),
 		config:  config,
 		server:  server,
 		usecase: usecase,
@@ -56,24 +59,23 @@ func (c *Consumer) listen(ctx context.Context) {
 
 	go c.usecase.OnPlayerConnect(onPlayerConnectDetector(ctx, processedPlayersID))
 
-	// TODO ctx
-	stopped := c.usecase.LifeCycle(ctx)
+	stopped := c.usecase.StartLifeCycle(ctx)
 
-	//if err := c.usecase.AddBot(); err != nil {
-	//	log.Print(err)
-	//}
+	//c.usecase.AddBot()
 
 	for {
 		// TODO startTime := time.Now()
 		select {
 		case <-ctx.Done():
-			log.Print("nc consumer", ctx.Err()) // TODO logger
 			<-stopped
+			c.logger.Debug("netcode consumer was finished")
 			return
 		default:
 		}
 		if err := c.server.Update(serverTime); err != nil {
-			log.Print(err) // TODO logger
+			c.logger.Error("unable to update the netcode server",
+				log.Err(err),
+			)
 			return
 		}
 		connectedClients := c.server.GetConnectedClientIds()
@@ -95,27 +97,37 @@ func (c *Consumer) listen(ctx context.Context) {
 }
 
 func (c *Consumer) handleMessage(ctx context.Context, clientID uint64, bts []byte) {
+	logger := c.logger.With(slog.Uint64("client_id", clientID))
 	var message api.Message
 	if err := proto.Unmarshal(bts, &message); err != nil {
-		log.Print(err) // TODO logger
+		logger.Error("unable to unmarshal the message",
+			log.Err(err),
+		)
 		return
 	}
+	logger = logger.With(slog.String("code", message.Code.String()))
 	rm, ok := registeredMessages[message.Code]
 	if !ok {
-		log.Printf("message %s not registered", message.Code.String()) // TODO logger
+		logger.Error("this message code is not registered")
 		return
 	}
 	msg := reflect.New(rm.messageType).Interface().(messageInterface)
 	if err := proto.Unmarshal(message.Payload, msg); err != nil {
-		log.Print(err) // TODO logger
+		logger.Error("unable to unmarshal the message",
+			log.Err(err),
+		)
 		return
 	}
 	if err := msg.Validate(); err != nil {
-		log.Print(err) // TODO logger
+		logger.Error("incoming message is invalid",
+			log.Err(err),
+		)
 		return
 	}
 	if err := msg.Execute(ctx, clientID, c.usecase); err != nil {
-		log.Print(err) // TODO logger
+		logger.Error("execute error",
+			log.Err(err),
+		)
 		return
 	}
 }

@@ -3,12 +3,37 @@ package nc_adapter
 import (
 	"github.com/dqso/mincer/server/internal/api"
 	"github.com/dqso/mincer/server/internal/entity"
+	"github.com/dqso/mincer/server/internal/log"
+	"google.golang.org/protobuf/proto"
 	"image/color"
+	"log/slog"
 )
 
-func (p *Producer) SendPayloadToClient(clientId uint64, payloadData []byte) error {
-	// TODO log
-	return p.server.SendPayloadToClient(clientId, payloadData)
+func (p *Producer) SendPayloadToClient(clientId uint64, code api.Code, msg proto.Message) bool {
+	bts, err := p.marshalMessage(code, msg)
+	if err != nil {
+		p.logger.Error("unable to marshal the message for the client",
+			slog.String("code", code.String()),
+			slog.Uint64("client_id", clientId),
+			log.Err(err),
+		)
+		return false
+	}
+	err = p.server.SendPayloadToClient(clientId, bts)
+	if err != nil {
+		p.logger.Error("unable to send the message to client",
+			slog.String("code", code.String()),
+			slog.Uint64("client_id", clientId),
+			slog.Int("size_message", len(bts)),
+			log.Err(err),
+		)
+		return false
+	}
+	p.logger.Debug("the message has been sent to the client",
+		slog.String("code", code.String()),
+		slog.Uint64("client_id", clientId),
+	)
+	return true
 }
 
 func dtoPlayerToApiPlayer(player entity.Player) *api.Player {

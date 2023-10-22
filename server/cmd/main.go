@@ -10,12 +10,13 @@ import (
 	"github.com/dqso/mincer/server/internal/configuration"
 	"github.com/dqso/mincer/server/internal/handler/nc"
 	"github.com/dqso/mincer/server/internal/handler/rest"
+	"github.com/dqso/mincer/server/internal/log"
 	"github.com/dqso/mincer/server/internal/usecase/token"
 	usecase_world "github.com/dqso/mincer/server/internal/usecase/world"
 	"github.com/dqso/mincer/server/pkg/nc"
 	"github.com/dqso/mincer/server/pkg/postgres"
 	"github.com/dqso/mincer/server/pkg/shutdown"
-	"log"
+	"log/slog"
 	"os/signal"
 	"syscall"
 	"time"
@@ -24,30 +25,33 @@ import (
 const shutdownTimeout = time.Second * 60
 
 func main() {
-	log.SetFlags(log.Llongfile | log.Ltime | log.Ldate)
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
+	logger := log.New()
+
 	var closer shutdown.Closer
 	defer func() {
-		log.Println("shutting down server gracefully") // TODO logger
+		logger.Info("shutting down gracefully")
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 		if err := closer.Close(ctx); err != nil {
-			log.Print(err) // TODO logger
+			logger.Error("failed to shutdown", log.Err(err))
 			return
 		}
 	}()
 
 	config, err := configuration.NewConfig()
 	if err != nil {
-		log.Print(err) // TODO logger
+		logger.Error("unable to initialize a configuration", log.Err(err))
 		return
 	}
+	logger = log.NewWithConfig(config)
+	slog.SetDefault(logger)
 
 	pgPool, err := postgres.Connect(ctx, config)
 	if err != nil {
-		log.Print(err) // TODO logger
+		logger.Error("unable to connect to postgres", log.Err(err))
 		return
 	}
 	closer.Add(func(ctx context.Context) error {
@@ -57,14 +61,14 @@ func main() {
 
 	ncServer, err := nc.Connect(config)
 	if err != nil {
-		log.Print(err)
+		logger.Error("unable to start a netcode server", log.Err(err))
 		return
 	}
 	closer.Add(func(ctx context.Context) error {
 		return ncServer.Stop()
 	})
 
-	ncProducer := nc_adapter.NewProducer(config, ncServer)
+	ncProducer := nc_adapter.NewProducer(config, logger, ncServer)
 	ncProducerDone := ncProducer.StartLoop(ctx)
 	closer.Add(func(ctx context.Context) error {
 		select {
@@ -75,31 +79,31 @@ func main() {
 		}
 	})
 
-	repoWorld := repository_world.NewRepository(ctx, pgPool)
+	repoWorld := repository_world.NewRepository(ctx, logger, pgPool)
 
-	usecaseWorld := usecase_world.NewUsecase(ncProducer, repoWorld)
+	usecaseWorld := usecase_world.NewUsecase(ctx, logger, ncProducer, repoWorld)
 
-	ncConsumer, err := nc_handler.NewConsumer(ctx, config, ncServer, usecaseWorld)
+	ncConsumer, err := nc_handler.NewConsumer(ctx, logger, config, ncServer, usecaseWorld)
 	if err != nil {
-		log.Print(err)
+		logger.Error("unable to initialize a netcode consumer", log.Err(err))
 		return
 	}
 	closer.Add(ncConsumer.Close)
-	log.Printf("netcode server started on %s...", config.NCAddress())
+	logger.Info("netcode server started...", slog.Any("address", config.NCAddress()))
 
-	repositoryToken := repository_token.NewRepository(pgPool)
+	repositoryToken := repository_token.NewRepository(logger, pgPool)
 
 	usecaseToken := usecase_token.NewUsecase(config, repositoryToken)
 
-	handler := rest.NewHandler(usecaseToken)
+	handler := rest.NewHandler(logger, usecaseToken)
 
-	httpServer := rest.NewServer(config, handler)
+	httpServer := rest.NewServer(logger, config, handler)
 	if err := httpServer.Start(ctx); err != nil {
-		log.Print(err) // TODO logger
+		logger.Info("unable to start a rest server", log.Err(err))
 		return
 	}
 	closer.Add(httpServer.Close)
-	log.Printf("rest server started on %s...", config.RestAddress())
+	logger.Info("rest server started...", slog.Any("address", config.RestAddress()))
 
 	<-ctx.Done()
 }

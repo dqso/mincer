@@ -3,7 +3,7 @@ package rest
 import (
 	"encoding/base64"
 	"encoding/json"
-	"log"
+	"github.com/dqso/mincer/server/internal/log"
 	"net/http"
 )
 
@@ -20,7 +20,7 @@ func (h Handler) AcquireToken(w http.ResponseWriter, r *http.Request) {
 
 	clientID, connectToken, err := h.usecase.AcquireToken(r.Context())
 	if err != nil {
-		log.Print(err) // TODO logger
+		h.logger.Error("unable to acquire a token", log.Err(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}

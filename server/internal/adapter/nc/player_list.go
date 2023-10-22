@@ -3,7 +3,6 @@ package nc_adapter
 import (
 	"github.com/dqso/mincer/server/internal/api"
 	"github.com/dqso/mincer/server/internal/entity"
-	"log"
 )
 
 func (p *Producer) PlayerList(toPlayerID uint64, players []entity.Player) {
@@ -25,13 +24,7 @@ func (p *Producer) PlayerList(toPlayerID uint64, players []entity.Player) {
 			if len(msg.Players) == 0 {
 				return
 			}
-			bts, err := p.marshalMessage(api.Code_PLAYER_LIST, msg)
-			if err != nil {
-				log.Print(err) // TODO logger
-				return
-			}
-			if err := p.SendPayloadToClient(toPlayerID, bts); err != nil {
-				log.Print(err) // TODO logger
+			if !p.SendPayloadToClient(toPlayerID, api.Code_PLAYER_LIST, msg) {
 				return
 			}
 		}

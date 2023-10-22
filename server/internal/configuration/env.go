@@ -1,6 +1,10 @@
 package configuration
 
+import "log/slog"
+
 type envModel struct {
+	LogLevel slog.Level `env:"LOG_LEVEL" envDefault:"info"`
+
 	RestAddress string `env:"REST_ADDRESS,notEmpty" envDefault:"0.0.0.0:8080"`
 
 	PostgresHost     string `env:"POSTGRES_HOST" envDefault:"localhost"`
@@ -14,6 +18,8 @@ type envModel struct {
 	NCMaxClients       int        `env:"NC_MAX_CLIENTS,notEmpty" envDefault:"256"`
 	NCRequestPerSecond int        `env:"NC_REQUEST_PER_SECOND,notEmpty" envDefault:"60"`
 }
+
+func (c Config) LogLevel() slog.Level { return c.env.LogLevel }
 
 func (c Config) RestAddress() string { return c.env.RestAddress }
 

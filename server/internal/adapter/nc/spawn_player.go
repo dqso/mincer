@@ -3,7 +3,7 @@ package nc_adapter
 import (
 	"github.com/dqso/mincer/server/internal/api"
 	"github.com/dqso/mincer/server/internal/entity"
-	"log"
+	"log/slog"
 )
 
 func (p *Producer) SpawnPlayer(player entity.Player) {
@@ -17,13 +17,14 @@ func (p *Producer) spawnPlayerBatch() []*api.Message {
 	defer p.mxSpawnPlayer.Unlock()
 	defer clear(p.spawnPlayer)
 	batch := make([]*api.Message, 0, len(p.spawnPlayer))
-	for _, player := range p.spawnPlayer {
-		msg, err := p.prepareMessage(api.Code_SPAWN_PLAYER, &api.SpawnPlayer{Player: dtoPlayerToApiPlayer(player)})
-		if err != nil {
-			log.Print(err) // TODO logger
-			continue
-		}
-		batch = append(batch, msg)
+	for id, player := range p.spawnPlayer {
+		p.logger.Debug("spawn player",
+			slog.Uint64("id", id),
+			// TODO detailed info
+		)
+		batch = p.appendToBatch(batch, api.Code_SPAWN_PLAYER, &api.SpawnPlayer{
+			Player: dtoPlayerToApiPlayer(player),
+		})
 	}
 	return batch
 }

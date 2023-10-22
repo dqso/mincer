@@ -1,6 +1,9 @@
 package repository_token
 
-import "context"
+import (
+	"context"
+	"log/slog"
+)
 
 func (r Repository) AcquireClientID(ctx context.Context) (uint64, error) {
 	conn, err := r.pool.Acquire(ctx)
@@ -16,5 +19,8 @@ func (r Repository) AcquireClientID(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 
+	r.logger.Debug("client id has been acquired",
+		slog.Uint64("id", clientID),
+	)
 	return clientID, nil
 }

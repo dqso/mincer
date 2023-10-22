@@ -2,7 +2,7 @@ package nc_adapter
 
 import (
 	"github.com/dqso/mincer/server/internal/api"
-	"log"
+	"log/slog"
 )
 
 func (p *Producer) OnPlayerConnect(id uint64) {
@@ -16,15 +16,13 @@ func (p *Producer) onPlayerConnectBatch() []*api.Message {
 	defer p.mxOnPlayerConnect.Unlock()
 	defer clear(p.onPlayerConnect)
 	batch := make([]*api.Message, 0, len(p.onPlayerConnect))
-	for playerID := range p.onPlayerConnect {
-		msg, err := p.prepareMessage(api.Code_ON_PLAYER_CONNECT, &api.OnPlayerConnect{
-			PlayerId: playerID,
+	for id := range p.onPlayerConnect {
+		p.logger.Debug("player has connected",
+			slog.Uint64("id", id),
+		)
+		batch = p.appendToBatch(batch, api.Code_ON_PLAYER_CONNECT, &api.OnPlayerConnect{
+			PlayerId: id,
 		})
-		if err != nil {
-			log.Print(err) // TODO logger
-			continue
-		}
-		batch = append(batch, msg)
 	}
 	return batch
 }

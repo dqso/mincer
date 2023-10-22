@@ -1,6 +1,9 @@
 package usecase_world
 
-import "log"
+import (
+	"github.com/dqso/mincer/server/internal/log"
+	"log/slog"
+)
 
 func (uc *Usecase) OnPlayerConnect(connect chan uint64, disconnect chan uint64) {
 	for {
@@ -12,9 +15,13 @@ func (uc *Usecase) OnPlayerConnect(connect chan uint64, disconnect chan uint64) 
 			}
 			player, err := uc.world.NewPlayer(id)
 			if err != nil {
-				log.Print(err) // TODO logger
+				uc.logger.Error("unable to create the player",
+					slog.Uint64("id", id),
+					log.Err(err),
+				)
 				continue
 			}
+			uc.logger.Info("player has connected", slog.Uint64("id", id))
 			uc.ncProducer.OnPlayerConnect(player.ID())
 			uc.ncProducer.WorldInfo(id, uc.world)
 			uc.ncProducer.PlayerList(id, uc.world.Players().Slice())
@@ -26,6 +33,7 @@ func (uc *Usecase) OnPlayerConnect(connect chan uint64, disconnect chan uint64) 
 			}
 			uc.world.Players().Remove(id)
 			uc.ncProducer.OnPlayerDisconnect(id)
+			uc.logger.Info("player has disconnected", slog.Uint64("id", id))
 		}
 	}
 }

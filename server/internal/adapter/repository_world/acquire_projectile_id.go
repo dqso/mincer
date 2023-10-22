@@ -2,16 +2,20 @@ package repository_world
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"math"
+	"math/rand"
 )
 
 func (r *Repository) AcquireProjectileID() uint64 {
 	id, ok := <-r.projectileIDs
 	if !ok {
-		log.Printf("channel projectileIDs is closed")
-		return 0
+		r.logger.Warn("unable to acquire the projectile id because projectileIDs channel is closed. Random numbers are used")
+		return rand.Uint64()
 	}
+	r.logger.Debug("projectile id has been acquired",
+		slog.Uint64("id", id),
+	)
 	return id
 }
 
@@ -37,6 +41,7 @@ func (r *Repository) acquireProjectileID(ctx context.Context) {
 				if _, err := conn.Exec(ctx, stmt); err != nil {
 					return 0, err
 				}
+				r.logger.Info("projectile id pool has been reset")
 			}
 			if err != nil {
 				return 0, err
@@ -44,7 +49,7 @@ func (r *Repository) acquireProjectileID(ctx context.Context) {
 			return id, nil
 		}()
 		if err != nil {
-			log.Print(err) // TODO logger
+			r.logger.Error("unable to acquire the projectile id")
 			continue
 		}
 		select {

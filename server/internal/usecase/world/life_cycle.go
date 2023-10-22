@@ -3,17 +3,20 @@ package usecase_world
 import (
 	"context"
 	"github.com/dqso/mincer/server/internal/entity"
-	"log"
+	"log/slog"
 	"time"
 )
 
-func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
+func (uc *Usecase) StartLifeCycle(ctx context.Context) chan struct{} {
 	stopped := make(chan struct{})
 
 	go func() {
 		defer close(stopped)
 		var lifeTime time.Duration
 		const deltaTime = time.Millisecond * 10
+		uc.logger.Info("the life cycle of the world has started",
+			slog.String("delta", deltaTime.String()),
+		)
 		for {
 			startPause := time.Now()
 			select {
@@ -25,7 +28,6 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 			players := uc.world.Players().Slice()
 
 			for _, projectile := range uc.world.ProjectileList().Slice() {
-				//log.Printf("projectile %d: %v", projectile.ID(), projectile.Position())
 				oldPosition := projectile.Position()
 				newPosition, outOfRange := projectile.Move(deltaTime, uc.world.SizeRect())
 				middlePosition := oldPosition.Middle(newPosition)
@@ -62,14 +64,13 @@ func (uc *Usecase) LifeCycle(ctx context.Context) chan struct{} {
 					} else if projectile != nil {
 						uc.world.ProjectileList().Add(projectile)
 						uc.ncProducer.CreateProjectile(projectile)
-						//log.Printf("created projectile %d: %+v", projectile.ID(), projectile)
 					}
 				}
 			}
 
 			sleepTime := deltaTime - time.Since(startPause)
 			if sleepTime < 0 {
-				log.Print("WARN: sleep time is negative") // TODO
+				uc.logger.Warn("sleep time is negative, which means the server is overloaded")
 			}
 			time.Sleep(sleepTime)
 			lifeTime += time.Since(startPause)

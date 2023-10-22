@@ -22,7 +22,7 @@ type Projectile interface {
 	Radius() float64
 	Speed() float64
 	Direction() float64
-	Distance() float64
+	Distance() float64 // TODO добавить удаление снаряда, если дистанция превысила свой "лимит"
 	Owner() uint64
 	Move(lifeTime time.Duration, masSize Rect) (newPosition Point, outOfRange bool)
 	CollisionAnalysis(position Point, players []Player) Player

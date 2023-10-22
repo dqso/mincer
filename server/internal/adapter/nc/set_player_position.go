@@ -3,7 +3,8 @@ package nc_adapter
 import (
 	"github.com/dqso/mincer/server/internal/api"
 	"github.com/dqso/mincer/server/internal/entity"
-	"log"
+	"github.com/dqso/mincer/server/internal/log"
+	"log/slog"
 )
 
 func (p *Producer) SetPlayerPosition(id uint64, position entity.Point) {
@@ -18,12 +19,15 @@ func (p *Producer) setPlayerPositionBatch() []*api.Message {
 	defer clear(p.playerPositions)
 	batch := make([]*api.Message, 0, len(p.playerPositions))
 	for id, position := range p.playerPositions {
-		msg, err := p.prepareMessage(api.Code_SET_PLAYER_POSITION, &api.SetPlayerPosition{Id: id, X: position.X, Y: position.Y})
-		if err != nil {
-			log.Print(err) // TODO logger
-			continue
-		}
-		batch = append(batch, msg)
+		p.logger.Debug("set player position",
+			slog.Uint64("id", id),
+			log.Point(position),
+		)
+		batch = p.appendToBatch(batch, api.Code_SET_PLAYER_POSITION, &api.SetPlayerPosition{
+			Id: id,
+			X:  position.X, // TODO api.Point
+			Y:  position.Y,
+		})
 	}
 	return batch
 }

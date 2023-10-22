@@ -13,8 +13,9 @@ enum Code {
   ON_PLAYER_CONNECT    = 10;
   ON_PLAYER_DISCONNECT = 11;
   ON_PLAYER_WASTED     = 12;
+  ON_PLAYER_ATTACKED   = 13;
 
-  reserved 13 to 29;
+  reserved 14 to 29;
 
   // To one client
 
@@ -170,6 +171,11 @@ message SetPlayerPosition {
 message SetPlayerWeapon {
   uint64 id     = 1;
   Weapon weapon = 2;
+}
+
+message OnPlayerAttacked {
+  uint64 id           = 1;
+  double directionAim = 2;
 }
 
 message Projectile {

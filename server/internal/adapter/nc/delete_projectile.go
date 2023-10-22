@@ -2,7 +2,7 @@ package nc_adapter
 
 import (
 	"github.com/dqso/mincer/server/internal/api"
-	"log"
+	"log/slog"
 )
 
 func (p *Producer) DeleteProjectile(id uint64) {
@@ -17,12 +17,12 @@ func (p *Producer) deleteProjectileBatch() []*api.Message {
 	defer clear(p.deleteProjectile)
 	batch := make([]*api.Message, 0, len(p.deleteProjectile))
 	for id := range p.deleteProjectile {
-		msg, err := p.prepareMessage(api.Code_DELETE_PROJECTILE, &api.DeleteProjectile{Id: id})
-		if err != nil {
-			log.Print(err) // TODO logger
-			continue
-		}
-		batch = append(batch, msg)
+		p.logger.Debug("delete projectile",
+			slog.Uint64("id", id),
+		)
+		batch = p.appendToBatch(batch, api.Code_DELETE_PROJECTILE, &api.DeleteProjectile{
+			Id: id,
+		})
 	}
 	return batch
 }

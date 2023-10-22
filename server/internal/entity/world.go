@@ -13,13 +13,18 @@ type World interface {
 	Southeast() Point
 
 	NewPlayer(id uint64) (Player, error)
-	NewBot() (Bot, error)
 	Respawn(p Player)
 	SizeRect() Rect
 	Players() PlayerList
 	SearchNearby(point Point, callback func(p Player) (stop bool)) Player
 	ProjectileList() ProjectileList
 	Horn() Horn
+
+	AcquireClass() Class
+	AcquireWeapon(class Class) Weapon
+
+	RegisterBot(b Bot, stopFunc func())
+	AcquireBotID() uint32
 }
 
 type world struct {
@@ -37,7 +42,7 @@ type world struct {
 	projectileList ProjectileList
 }
 
-func NewWorld(seed int64, northwest, southeast Point, horn Horn) World {
+func NewWorld(ctx context.Context, seed int64, northwest, southeast Point, horn Horn) World {
 	w := &world{
 		horn:       horn,
 		northwest:  northwest,
@@ -51,7 +56,7 @@ func NewWorld(seed int64, northwest, southeast Point, horn Horn) World {
 		projectileList: newProjectileList(),
 	}
 
-	go w.supportRegions(context.TODO()) // tODO
+	go w.supportRegions(ctx)
 
 	return w
 }
@@ -91,38 +96,37 @@ func (w *world) NewPlayer(id uint64) (Player, error) {
 	if _, ok := w.playerList.Get(id); ok {
 		return nil, ErrPlayerAlreadyExists
 	}
-	class := w.acquireClass()
-	weapon := w.acquireWeapon(class)
-	p := newPlayer(id, class, weapon, w.Horn())
-	p.SetPosition(Point{10, 10}) // TODO //w.acquirePosition(p.Radius()))
+	class := w.AcquireClass()
+	weapon := w.AcquireWeapon(class)
+	p := NewPlayer(id, class, weapon, w.Horn())
+	p.SetPosition(w.acquirePosition(p.Radius()))
 	w.playerList.Add(p)
 	return p, nil
 }
 
-func (w *world) NewBot() (Bot, error) {
-	class := w.acquireClass()
-	weapon := w.acquireWeapon(class)
-	b := w.botList.NewBot(w, class, weapon)
+func (w *world) RegisterBot(b Bot, stopFunc func()) {
+	w.botList.Add(b, stopFunc)
 	b.SetPosition(w.acquirePosition(b.Radius()))
 	w.playerList.Add(b)
-	return b, nil
 }
 
+func (w *world) AcquireBotID() uint32 { return w.botList.AcquireID() }
+
 func (w *world) Respawn(p Player) {
-	class := w.acquireClass()
-	weapon := w.acquireWeapon(class)
+	class := w.AcquireClass()
+	weapon := w.AcquireWeapon(class)
 	p.SetClass(class)
 	p.SetWeapon(weapon)
 	p.SetHP(p.MaxHP())
 	p.SetPosition(w.acquirePosition(p.Radius()))
 }
 
-func (w *world) acquireClass() Class {
+func (w *world) AcquireClass() Class {
 	list := Classes()
 	return list[w.God().Int(0, len(list)-1)]
 }
 
-func (w *world) acquireWeapon(class Class) Weapon {
+func (w *world) AcquireWeapon(class Class) Weapon {
 	list := Weapons(class)
 	return list[w.God().Int(0, len(list)-1)]()
 }
@@ -138,7 +142,7 @@ func (w *world) Players() PlayerList {
 	return w.playerList
 }
 
-const nr int16 = 10 // amount of regions = nr * nr
+const nr int16 = 10 // nr * nr is an amount of regions
 
 func (w *world) supportRegions(ctx context.Context) {
 	deltaX := math.Abs(w.southeast.X-w.northwest.X) / float64(nr)
@@ -179,9 +183,7 @@ func (w *world) supportRegions(ctx context.Context) {
 			w.regions = newRegions
 		}()
 
-		//log.Print(newRegions)
-
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 500)
 	}
 }
 
@@ -208,7 +210,7 @@ func (w *world) SearchNearby(point Point, cb func(p Player) bool) Player {
 	region := w.calculateRegion(point)
 
 	seen := make(map[int16]struct{})
-	nr2 := nr * nr
+	const nr2 = nr * nr
 
 	step := map[int16]struct{}{
 		region: {},
